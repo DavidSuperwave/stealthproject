@@ -1,18 +1,35 @@
 'use client'
 
-import { HelpCircle, Plus, User } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { HelpCircle, LogOut, Plus, User } from 'lucide-react'
 import Link from 'next/link'
+import { createClient } from '@/lib/supabase/client'
+import type { User as SupabaseUser } from '@supabase/supabase-js'
 
 interface HeaderProps {
   credits: number
   trialDaysRemaining: number
-  user: {
-    name: string
-    avatar?: string
-  }
 }
 
-export default function Header({ credits, trialDaysRemaining, user }: HeaderProps) {
+export default function Header({ credits, trialDaysRemaining }: HeaderProps) {
+  const router = useRouter()
+  const [user, setUser] = useState<SupabaseUser | null>(null)
+
+  useEffect(() => {
+    const supabase = createClient()
+    supabase.auth.getUser().then(({ data }) => {
+      setUser(data.user)
+    })
+  }, [])
+
+  async function handleSignOut() {
+    const supabase = createClient()
+    await supabase.auth.signOut()
+    router.push('/login')
+    router.refresh()
+  }
+
   return (
     <header className="h-16 bg-background border-b border-border flex items-center justify-between px-6">
       {/* Left - Breadcrumb */}
@@ -42,14 +59,26 @@ export default function Header({ credits, trialDaysRemaining, user }: HeaderProp
           {trialDaysRemaining} days remaining
         </div>
 
+        {/* User email */}
+        {user && (
+          <span className="text-sm text-text-secondary truncate max-w-[180px]">
+            {user.email}
+          </span>
+        )}
+
         {/* User Avatar */}
         <div className="w-8 h-8 rounded-full bg-bg-elevated border border-border flex items-center justify-center">
-          {user.avatar ? (
-            <img src={user.avatar} alt={user.name} className="w-full h-full rounded-full" />
-          ) : (
-            <User className="w-4 h-4 text-text-secondary" />
-          )}
+          <User className="w-4 h-4 text-text-secondary" />
         </div>
+
+        {/* Sign out */}
+        <button
+          onClick={handleSignOut}
+          title="Sign out"
+          className="w-8 h-8 rounded-full border border-border flex items-center justify-center text-text-secondary hover:text-white hover:border-red-500 transition-colors"
+        >
+          <LogOut className="w-4 h-4" />
+        </button>
       </div>
     </header>
   )

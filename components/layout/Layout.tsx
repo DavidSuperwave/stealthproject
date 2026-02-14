@@ -12,10 +12,9 @@ export default function Layout({ children }: LayoutProps) {
     <div className="flex h-screen bg-background">
       <Sidebar activeItem="projects" />
       <div className="flex-1 flex flex-col overflow-hidden">
-        <Header 
+        <Header
           credits={20.00}
           trialDaysRemaining={14}
-          user={{ name: 'David', avatar: undefined }}
         />
         <main className="flex-1 overflow-y-auto p-6">
           {children}
