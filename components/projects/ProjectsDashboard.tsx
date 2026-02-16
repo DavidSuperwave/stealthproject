@@ -62,13 +62,13 @@ export default function ProjectsDashboard() {
       <TutorialBanner />
 
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold text-white">My Projects</h1>
+        <h1 className="text-2xl font-semibold text-white">Mis Proyectos</h1>
         <button 
           onClick={() => setIsCreateModalOpen(true)}
           className="flex items-center gap-2 px-4 py-2 bg-accent hover:bg-accent-hover text-white rounded-lg font-medium transition-colors"
         >
           <Plus className="w-4 h-4" />
-          Create Project
+          Crear Proyecto
         </button>
       </div>
 
@@ -76,7 +76,7 @@ export default function ProjectsDashboard() {
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-muted" />
         <input
           type="text"
-          placeholder="Search for a project"
+          placeholder="Buscar un proyecto"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className="w-full max-w-md pl-10 pr-4 py-2.5 bg-bg-secondary border border-border rounded-lg text-white placeholder-text-muted focus:outline-none focus:border-accent"
@@ -87,12 +87,12 @@ export default function ProjectsDashboard() {
         <table className="w-full data-table">
           <thead>
             <tr className="border-b border-border">
-              <th className="px-6 py-4 text-left">Project Name</th>
-              <th className="px-6 py-4 text-left">Project Type</th>
-              <th className="px-6 py-4 text-left">Created By</th>
-              <th className="px-6 py-4 text-left">Source Language</th>
-              <th className="px-6 py-4 text-left">Created At</th>
-              <th className="px-6 py-4 text-left">Updated At</th>
+              <th className="px-6 py-4 text-left">Nombre del Proyecto</th>
+              <th className="px-6 py-4 text-left">Tipo</th>
+              <th className="px-6 py-4 text-left">Creado por</th>
+              <th className="px-6 py-4 text-left">Idioma</th>
+              <th className="px-6 py-4 text-left">Fecha de Creación</th>
+              <th className="px-6 py-4 text-left">Última Actualización</th>
               <th className="px-6 py-4 text-right"></th>
             </tr>
           </thead>
@@ -109,7 +109,7 @@ export default function ProjectsDashboard() {
                 </td>
                 <td className="px-6 py-4">
                   <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-bg-elevated text-text-secondary">
-                    {project.type === 'personalization' ? 'Single Actor' : 'Translation'}
+                    {project.type === 'personalization' ? 'Un Actor' : 'Traducción'}
                   </span>
                 </td>
                 <td className="px-6 py-4 text-text-secondary">{project.createdBy}</td>

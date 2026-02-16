@@ -37,8 +37,11 @@ export async function updateSession(request: NextRequest) {
     request.nextUrl.pathname.startsWith('/login') ||
     request.nextUrl.pathname.startsWith('/signup')
 
+  const isPublicPage =
+    request.nextUrl.pathname.startsWith('/landing')
+
   // Unauthenticated user trying to access protected route
-  if (!user && !isAuthPage && !request.nextUrl.pathname.startsWith('/auth/callback')) {
+  if (!user && !isAuthPage && !isPublicPage && !request.nextUrl.pathname.startsWith('/auth/callback')) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
     return NextResponse.redirect(url)

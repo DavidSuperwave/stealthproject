@@ -5,8 +5,8 @@ import '@/styles/globals.css'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'Jaime AI Goon Generator',
-  description: 'AI-powered video personalization for Mexico',
+  title: 'Jaime AI — Generador de Videos Personalizados',
+  description: 'Videos personalizados con IA para el mercado mexicano',
 }
 
 export default function RootLayout({

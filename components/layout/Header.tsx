@@ -35,10 +35,10 @@ export default function Header({ credits, trialDaysRemaining }: HeaderProps) {
       {/* Left - Breadcrumb */}
       <div className="flex items-center gap-4">
         <Link href="/" className="text-text-secondary hover:text-white transition-colors">
-          Home
+          Inicio
         </Link>
         <span className="text-text-muted">/</span>
-        <span className="text-white">Projects</span>
+        <span className="text-white">Proyectos</span>
       </div>
 
       {/* Right - Actions */}
@@ -51,12 +51,12 @@ export default function Header({ credits, trialDaysRemaining }: HeaderProps) {
         {/* Credits */}
         <button className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-bg-elevated border border-border hover:border-accent transition-colors">
           <Plus className="w-4 h-4 text-accent" />
-          <span className="text-sm font-medium">{credits.toFixed(2)} credits</span>
+          <span className="text-sm font-medium">{credits.toFixed(2)} créditos</span>
         </button>
 
         {/* Trial Badge */}
         <div className="px-3 py-1.5 rounded-full bg-pink-600 text-white text-sm font-medium">
-          {trialDaysRemaining} days remaining
+          {trialDaysRemaining} días restantes
         </div>
 
         {/* User email */}
@@ -74,7 +74,7 @@ export default function Header({ credits, trialDaysRemaining }: HeaderProps) {
         {/* Sign out */}
         <button
           onClick={handleSignOut}
-          title="Sign out"
+          title="Cerrar sesión"
           className="w-8 h-8 rounded-full border border-border flex items-center justify-center text-text-secondary hover:text-white hover:border-red-500 transition-colors"
         >
           <LogOut className="w-4 h-4" />

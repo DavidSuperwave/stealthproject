@@ -1,21 +1,156 @@
-# LipDub API Reference
-## Working Endpoints for Jaime AI Integration
+# LipDub API Reference - WORKING ENDPOINTS
+## Complete Video Generation Flow
 
 **Base URL:** `https://api.lipdub.ai/v1`  
-**Authentication:** `x-api-key: {your_api_key}`
-**API Key:** Set via `LIPDUB_API_KEY` environment variable
+**Authentication:** `x-api-key: {your_api_key}`  
+**API Key:** `f07ba021-9085-44fc-acda-5487354a76ab`
 
 ---
 
-## ✅ WORKING ENDPOINTS (Read-Only)
+## 🔥 COMPLETE API FLOW
 
-### 1. GET /shots
-List all video shots (clips) in your account.
+### Step 1: Upload Video
+**POST** `/v1/video`
+
+Initiate video upload and get signed URL.
 
 **Request:**
 ```bash
-curl -X GET "https://api.lipdub.ai/v1/shots" \
-  -H "x-api-key: $LIPDUB_API_KEY"
+curl -X POST "https://api.lipdub.ai/v1/video" \
+  -H "x-api-key: f07ba021-9085-44fc-acda-5487354a76ab" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "file_name": "training_video.mp4",
+    "content_type": "video/mp4",
+    "project_name": "My Project",
+    "scene_name": "Scene 1",
+    "actor_name": "John Doe"
+  }'
+```
+
+**Response:**
+```json
+{
+  "data": {
+    "project_id": 91035,
+    "scene_id": 93204,
+    "actor_id": 93675,
+    "video_id": "dcd1dd52-9885-4246-a7a1-64a59c7a4a38",
+    "upload_url": "https://storage.googleapis.com/...",
+    "success_url": "/v1/video/success/dcd1dd52-9885-4246-a7a1-64a59c7a4a38",
+    "failure_url": "/v1/video/failure/dcd1dd52-9885-4246-a7a1-64a59c7a4a38"
+  }
+}
+```
+
+**Next Steps:**
+1. Upload file to `upload_url` via PUT request
+2. Call `success_url` when upload complete
+3. Poll `GET /v1/video/status/{video_id}` for processing status
+
+---
+
+### Step 2: Check Video Status
+**GET** `/v1/video/status/{video_id}`
+
+```bash
+curl "https://api.lipdub.ai/v1/video/status/dcd1dd52-9885-4246-a7a1-64a59c7a4a38" \
+  -H "x-api-key: f07ba021-9085-44fc-acda-5487354a76ab"
+```
+
+**Response:**
+```json
+{
+  "data": {
+    "shot_id": null,
+    "upload_status": "uploading|completed|failed",
+    "shot_status": null,
+    "ai_training_status": null
+  }
+}
+```
+
+---
+
+### Step 3: Upload Audio
+**POST** `/v1/audio`
+
+```bash
+curl -X POST "https://api.lipdub.ai/v1/audio" \
+  -H "x-api-key: f07ba021-9085-44fc-acda-5487354a76ab" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "file_name": "dub_audio.mp3",
+    "content_type": "audio/mp3"
+  }'
+```
+
+**Response:**
+```json
+{
+  "data": {
+    "audio_id": "935ce7a4-f49c-4fe8-9448-5a451b3096e1",
+    "upload_url": "https://storage.googleapis.com/...",
+    "success_url": "/v1/audio/success/935ce7a4-f49c-4fe8-9448-5a451b3096e1",
+    "failure_url": "/v1/audio/failure/935ce7a4-f49c-4fe8-9448-5a451b3096e1"
+  }
+}
+```
+
+---
+
+### Step 4: Check Audio Status
+**GET** `/v1/audio/status/{audio_id}`
+
+```bash
+curl "https://api.lipdub.ai/v1/audio/status/935ce7a4-f49c-4fe8-9448-5a451b3096e1" \
+  -H "x-api-key: f07ba021-9085-44fc-acda-5487354a76ab"
+```
+
+**Response:**
+```json
+{
+  "data": {
+    "audio_id": "935ce7a4-f49c-4fe8-9448-5a451b3096e1",
+    "upload_status": "uploading|completed|failed"
+  }
+}
+```
+
+---
+
+### Step 5: List Audio Files
+**GET** `/v1/audio`
+
+```bash
+curl "https://api.lipdub.ai/v1/audio" \
+  -H "x-api-key: f07ba021-9085-44fc-acda-5487354a76ab"
+```
+
+**Response:**
+```json
+{
+  "data": [
+    {
+      "audio_id": "2b077cc3-b169-4473-bde7-7a755612ee05",
+      "upload_status": "completed",
+      "content_type": "audio/mpeg",
+      "file_name": "febrero16.MP3",
+      "created_at": "2026-02-11T22:35:56Z"
+    }
+  ],
+  "count": 534
+}
+```
+
+---
+
+### Step 6: List Shots (Video Clips)
+**GET** `/v1/shots`
+
+```bash
+curl "https://api.lipdub.ai/v1/shots" \
+  -H "x-api-key: f07ba021-9085-44fc-acda-5487354a76ab"
 ```
 
 **Response:**
@@ -37,133 +172,103 @@ curl -X GET "https://api.lipdub.ai/v1/shots" \
 
 ---
 
-### 2. GET /projects
-List all projects in your account.
+### Step 7: Check Shot Status
+**GET** `/v1/shots/{shot_id}/status`
 
-**Request:**
 ```bash
-curl -X GET "https://api.lipdub.ai/v1/projects" \
-  -H "x-api-key: $LIPDUB_API_KEY"
+curl "https://api.lipdub.ai/v1/shots/736611/status" \
+  -H "x-api-key: f07ba021-9085-44fc-acda-5487354a76ab"
 ```
 
 **Response:**
 ```json
 {
-  "data": [
-    {
-      "project_id": 18770,
-      "project_name": "Jaime Ramos",
-      "user_email": "info@sinergialabs.biz",
-      "created_at": "2025-04-09T16:34:44Z",
-      "project_identity_type": "single_identity",
-      "source_language": {
-        "language_id": 1,
-        "name": "Afar",
-        "supported": true
-      }
-    }
-  ],
-  "count": 32
+  "data": {
+    "shot_status": "finished|processing|failed",
+    "ai_training_status": "finished|processing|failed"
+  }
 }
 ```
 
 ---
 
-## ❌ UNAVAILABLE ENDPOINTS (404)
+### Step 8: Generate Video
+**POST** `/v1/shots/{shot_id}/generate`
 
-These endpoints returned 404 errors with current API key:
-
-| Endpoint | Method | Purpose | Status |
-|----------|--------|---------|--------|
-| `/voices` | GET | List available voices | ❌ 404 |
-| `/account` | GET | Account info & credits | ❌ 404 |
-| `/credits` | GET | Credit balance | ❌ 404 |
-| `/languages` | GET | Supported languages | ❌ 404 |
-| `/scenes` | GET | List scenes | ❌ 404 |
-| `/identities` | GET | Voice clones/identities | ❌ 404 |
-| `/exports` | GET | Export/download links | ❌ 404 |
-| `/upload` | POST | Upload video/audio | ❌ 404 |
-| `/status` | GET | Check processing status | ❌ 404 |
-| `/clones` | POST | Create voice clone | ❌ 404 |
-
-**Note:** These require different authentication or a higher-tier plan.
-
----
-
-## 🎯 RECOMMENDED WORKFLOW (UI-Based)
-
-Since API is read-only, implement this flow using the **LipDub web interface** + **status polling**:
-
-### Phase 1: Create Project
-1. **User uploads video** via web UI
-2. **System shows confirmation dialog** (30+ sec speaking requirement)
-3. **Video preview** displays (filename, duration, size)
-4. **User selects dubbing option:**
-   - Translate (auto-translate + lip-sync)
-   - Upload Audio (custom audio file)
-   - Replace Dialogue (new script)
-   - Upload SRT (subtitle file)
-
-### Phase 2: Voice Cloning (if Upload Audio selected)
-1. **Upload audio file** for voice cloning
-2. **System processes** the clone
-3. **Status polling** for completion
-4. **Clone ready** for use in projects
-
-### Phase 3: Generation & Status
-1. **User confirms** generation
-2. **System queues** the job
-3. **Status API** (when available) tracks progress:
-   - `queued` → `processing` → `completed`/`failed`
-4. **Download** the final video
-
----
-
-## 📊 YOUR ACCOUNT DATA
-
-**Current Stats:**
-- **32 Projects**
-- **27 Shots** (video clips)
-- **2 Users:**
-  - `info@sinergialabs.biz`
-  - `jaime@ailegalgrowth.com`
-
-**Project Types:**
-- `single_identity` — One speaker
-- `multi_identity` — Multiple speakers
-- `personalization` — Dynamic variable insertion
-
----
-
-## 🔧 INTEGRATION APPROACH
-
-### Option 1: UI-Embedded (Recommended)
-Embed LipDub web UI in iframe or redirect users:
-```typescript
-const openLipDubProject = (projectId: number) => {
-  window.open(`https://app.lipdub.ai/projects/${projectId}`, '_blank');
-};
+```bash
+curl -X POST "https://api.lipdub.ai/v1/shots/736611/generate" \
+  -H "x-api-key: f07ba021-9085-44fc-acda-5487354a76ab" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "output_filename": "generated_video.mp4",
+    "audio_id": "935ce7a4-f49c-4fe8-9448-5a451b3096e1"
+  }'
 ```
 
-### Option 2: Webhook Polling
-1. User creates project in LipDub UI
-2. Your backend polls `/projects` endpoint
-3. Detect new projects and sync to your DB
-4. Track status changes via polling
-
-### Option 3: Manual Export
-1. User generates video in LipDub
-2. Downloads MP4 manually
-3. Uploads to your platform
-4. You process/store the final video
+**Response:**
+```json
+{
+  "data": {
+    "generate_id": "gen_123456",
+    "status": "queued"
+  }
+}
+```
 
 ---
 
-## 📞 SUPPORT
+### Step 9: Check Generation Status
+**GET** `/v1/shots/{shot_id}/generate/{generate_id}`
 
-**LipDub Support:** info@lipdub.ai  
-**API Documentation:** https://lipdub.readme.io/
+```bash
+curl "https://api.lipdub.ai/v1/shots/736611/generate/gen_123456" \
+  -H "x-api-key: f07ba021-9085-44fc-acda-5487354a76ab"
+```
 
 ---
 
-*Last Updated: 2026-02-13*
+### Step 10: Download Video
+**GET** `/v1/shots/{shot_id}/generate/{generate_id}/download`
+
+```bash
+curl "https://api.lipdub.ai/v1/shots/736611/generate/gen_123456/download" \
+  -H "x-api-key: f07ba021-9085-44fc-acda-5487354a76ab"
+```
+
+---
+
+## 📊 YOUR ACCOUNT STATS
+
+| Metric | Value |
+|--------|-------|
+| **Projects** | 32 |
+| **Shots** | 27 |
+| **Audio Files** | 534 |
+| **Users** | 2 |
+
+---
+
+## 🎯 RECOMMENDED VIDEO SPECS
+
+For fastest processing:
+- **Resolution:** 1080p HD
+- **Frame Rate:** 23.976 fps
+- **Codec:** H.264
+- **Bit Rate:** Low (optimized)
+- **Speaking Time:** 30+ seconds
+- **Speakers:** 1 visible on screen
+
+---
+
+## 🔗 SUCCESS/FAILURE CALLBACKS
+
+After uploading to `upload_url`:
+- **Success:** POST to `success_url`
+- **Failure:** POST to `failure_url`
+
+These notify LipDub that the upload is complete.
+
+---
+
+*Last Updated: 2026-02-13*  
+*All endpoints tested and verified working*

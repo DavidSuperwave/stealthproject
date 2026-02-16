@@ -50,17 +50,17 @@ export default function SignupPage() {
     return (
       <div className="text-center">
         <CheckCircle className="w-12 h-12 text-accent mx-auto mb-4" />
-        <h2 className="text-xl font-semibold text-white mb-2">Check your email</h2>
+        <h2 className="text-xl font-semibold text-white mb-2">Revisa tu correo</h2>
         <p className="text-text-secondary text-sm mb-6">
-          We sent a confirmation link to{' '}
+          Enviamos un enlace de confirmación a{' '}
           <span className="text-white font-medium">{email}</span>.
-          Click the link to activate your account.
+          Haz clic en el enlace para activar tu cuenta.
         </p>
         <Link
           href="/login"
           className="text-accent hover:underline text-sm"
         >
-          Back to sign in
+          Volver a iniciar sesión
         </Link>
       </div>
     )
@@ -68,9 +68,9 @@ export default function SignupPage() {
 
   return (
     <>
-      <h2 className="text-xl font-semibold text-white mb-1">Create an account</h2>
+      <h2 className="text-xl font-semibold text-white mb-1">Crear una cuenta</h2>
       <p className="text-text-secondary text-sm mb-6">
-        Get started with Jaime AI
+        Comienza a usar Jaime AI
       </p>
 
       {error && (
@@ -83,7 +83,7 @@ export default function SignupPage() {
         {/* Email */}
         <div>
           <label htmlFor="email" className="block text-sm font-medium text-text-secondary mb-1.5">
-            Email
+            Correo electrónico
           </label>
           <div className="relative">
             <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
@@ -92,7 +92,7 @@ export default function SignupPage() {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@example.com"
+              placeholder="tu@ejemplo.com"
               required
               className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-bg-elevated border border-border text-white placeholder:text-text-muted focus:outline-none focus:border-accent transition-colors"
             />
@@ -102,7 +102,7 @@ export default function SignupPage() {
         {/* Password */}
         <div>
           <label htmlFor="password" className="block text-sm font-medium text-text-secondary mb-1.5">
-            Password
+            Contraseña
           </label>
           <div className="relative">
             <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
@@ -111,7 +111,7 @@ export default function SignupPage() {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="At least 6 characters"
+              placeholder="Mínimo 6 caracteres"
               required
               minLength={6}
               className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-bg-elevated border border-border text-white placeholder:text-text-muted focus:outline-none focus:border-accent transition-colors"
@@ -126,14 +126,14 @@ export default function SignupPage() {
           className="w-full py-2.5 rounded-lg bg-gradient-accent text-white font-medium hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2"
         >
           {loading && <Loader2 className="w-4 h-4 animate-spin" />}
-          Create account
+          Crear cuenta
         </button>
       </form>
 
       <p className="mt-6 text-center text-sm text-text-secondary">
-        Already have an account?{' '}
+        ¿Ya tienes cuenta?{' '}
         <Link href="/login" className="text-accent hover:underline">
-          Sign in
+          Inicia sesión
         </Link>
       </p>
     </>

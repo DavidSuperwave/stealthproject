@@ -10,25 +10,25 @@ interface SidebarProps {
 const navItems = [
   { 
     id: 'personalize' as const, 
-    label: 'Personalize a video', 
+    label: 'Personalizar video', 
     icon: Wand2,
     href: '/personalize'
   },
   { 
     id: 'scripts' as const, 
-    label: 'Script Workshop', 
+    label: 'Biblioteca de guiones', 
     icon: FileText,
     href: '/scripts'
   },
   { 
     id: 'projects' as const, 
-    label: 'Projects', 
+    label: 'Proyectos', 
     icon: Folder,
     href: '/'
   },
   { 
     id: 'subscription' as const, 
-    label: 'Subscription', 
+    label: 'Suscripción', 
     icon: CreditCard,
     href: '/subscription'
   },

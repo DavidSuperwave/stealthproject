@@ -4,20 +4,20 @@ export default function SubscriptionPage() {
   return (
     <Layout>
       <div className="max-w-4xl mx-auto space-y-6">
-        <h1 className="text-2xl font-semibold text-white">Subscription</h1>
+        <h1 className="text-2xl font-semibold text-white">Suscripción</h1>
 
         {/* Current Plan */}
         <div className="bg-bg-secondary rounded-xl border border-border p-6">
-          <h2 className="text-lg font-medium text-white mb-4">Current Plan</h2>
+          <h2 className="text-lg font-medium text-white mb-4">Plan Actual</h2>
           
           <div className="flex items-center justify-between p-4 bg-bg-elevated rounded-lg">
             <div>
-              <p className="text-white font-medium">Free Trial</p>
-              <p className="text-text-secondary text-sm">14 days remaining</p>
+              <p className="text-white font-medium">Prueba Gratis</p>
+              <p className="text-text-secondary text-sm">14 días restantes</p>
             </div>
             <div className="text-right">
               <p className="text-2xl font-bold text-white">20</p>
-              <p className="text-text-secondary text-sm">credits left</p>
+              <p className="text-text-secondary text-sm">créditos restantes</p>
             </div>
           </div>
         </div>
@@ -25,9 +25,9 @@ export default function SubscriptionPage() {
         {/* Upgrade Options */}
         <div className="grid grid-cols-3 gap-4">
           {[
-            { name: 'Starter', price: '$29', credits: '100/mo', features: ['100 credits/month', 'Basic support', 'Standard quality'] },
-            { name: 'Pro', price: '$99', credits: '500/mo', features: ['500 credits/month', 'Priority support', 'High quality', 'API access'] },
-            { name: 'Enterprise', price: 'Custom', credits: 'Unlimited', features: ['Unlimited credits', 'Dedicated support', 'Premium quality', 'Custom integration'] },
+            { name: 'Starter', price: '$29', credits: '100/mes', features: ['100 créditos/mes', 'Soporte básico', 'Calidad estándar'] },
+            { name: 'Pro', price: '$99', credits: '500/mes', features: ['500 créditos/mes', 'Soporte prioritario', 'Alta calidad', 'Acceso API'] },
+            { name: 'Enterprise', price: 'Personalizado', credits: 'Ilimitado', features: ['Créditos ilimitados', 'Soporte dedicado', 'Calidad premium', 'Integración personalizada'] },
           ].map((plan) => (
             <div 
               key={plan.name}
@@ -44,7 +44,7 @@ export default function SubscriptionPage() {
               </ul>
 
               <button className="w-full mt-6 px-4 py-2 bg-accent hover:bg-accent-hover text-white rounded-lg font-medium transition-colors">
-                Upgrade
+                Mejorar
               </button>
             </div>
           ))}
