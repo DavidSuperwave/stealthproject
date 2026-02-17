@@ -66,7 +66,7 @@ export default function Layout({ children }: LayoutProps) {
             </p>
           </div>
           <Link
-            href="/subscription"
+            href="/app/subscription"
             className="text-xs font-medium text-accent hover:text-accent-hover transition-colors"
           >
             Comprar más

@@ -1,7 +1,5 @@
-'use client'
-
-import UploadFlowPage from '@/app/upload/page'
+import { redirect } from 'next/navigation'
 
 export default function PersonalizePage() {
-  return <UploadFlowPage />
+  redirect('/app/upload')
 }

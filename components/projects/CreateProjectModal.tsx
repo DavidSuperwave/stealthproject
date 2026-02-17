@@ -104,7 +104,7 @@ export default function CreateProjectModal({ isOpen, onClose, onProjectCreated }
     setNameError(false)
     onProjectCreated?.()
 
-    router.push(`/upload?project=${projectId}&name=${encodeURIComponent(trimmedName)}`)
+    router.push(`/app/upload?project=${projectId}&name=${encodeURIComponent(trimmedName)}`)
     setIsCreating(false)
   }
 

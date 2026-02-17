@@ -33,7 +33,7 @@ export default function Header({ credits }: HeaderProps) {
     <header className="h-16 bg-background border-b border-border flex items-center justify-between px-6">
       {/* Left - Breadcrumb */}
       <div className="flex items-center gap-4">
-        <Link href="/" className="text-text-secondary hover:text-white transition-colors">
+        <Link href="/app" className="text-text-secondary hover:text-white transition-colors">
           Inicio
         </Link>
         <span className="text-text-muted">/</span>

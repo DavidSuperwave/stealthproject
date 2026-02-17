@@ -424,7 +424,7 @@ export default function ShotCreator({ videoId, audioId, scriptText, projectId, i
               <span className="font-bold text-white">{creditsInfo.remaining.toFixed(2)}</span>.
             </p>
             <Link
-              href="/subscription"
+              href="/app/subscription"
               className="inline-flex items-center gap-2 px-4 py-2 bg-accent hover:bg-accent-hover text-white rounded-lg font-medium transition-colors text-sm"
             >
               <CreditCard className="w-4 h-4" />

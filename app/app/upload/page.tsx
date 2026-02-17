@@ -113,7 +113,7 @@ function UploadFlowPage() {
   // ── Redirect if no project ID ──────────────────────────
   useEffect(() => {
     if (!projectId) {
-      router.replace('/?openCreate=1')
+      router.replace('/app?openCreate=1')
     }
   }, [projectId, router])
 
@@ -451,7 +451,7 @@ function UploadFlowPage() {
           <VideoUpload
             onUpload={handleVideoUpload}
             onContinue={() => setCurrentStep('audio')}
-            onCancel={() => router.push('/')}
+            onCancel={() => router.push('/app')}
             isUploading={isUploading}
             uploadProgress={uploadProgress}
             uploadComplete={state.videoUpload !== null && !isUploading && uploadProgress >= 100}
@@ -519,7 +519,7 @@ function UploadFlowPage() {
               </p>
               <div className="flex items-center justify-center gap-3 pt-2">
                 <Link
-                  href="/subscription"
+                  href="/app/subscription"
                   className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-accent hover:bg-accent-hover text-white text-sm font-medium transition-colors"
                 >
                   <CreditCard className="w-4 h-4" />

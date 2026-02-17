@@ -37,7 +37,7 @@ export async function sendCompletionEmail(params: {
   projectId: string
 }): Promise<void> {
   const { to, projectName, downloadUrl, projectId } = params
-  const projectLink = `${APP_URL}/upload?project=${projectId}`
+  const projectLink = `${APP_URL}/app/upload?project=${projectId}`
 
   const html = `
     <div style="font-family: 'Inter', Arial, sans-serif; max-width: 560px; margin: 0 auto; color: #fff; background: #0D0D0F; padding: 32px; border-radius: 12px;">
@@ -69,7 +69,7 @@ export async function sendFailureEmail(params: {
   projectId: string
 }): Promise<void> {
   const { to, projectName, projectId } = params
-  const projectLink = `${APP_URL}/upload?project=${projectId}`
+  const projectLink = `${APP_URL}/app/upload?project=${projectId}`
 
   const html = `
     <div style="font-family: 'Inter', Arial, sans-serif; max-width: 560px; margin: 0 auto; color: #fff; background: #0D0D0F; padding: 32px; border-radius: 12px;">

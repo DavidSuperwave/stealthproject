@@ -38,7 +38,7 @@ export async function updateSession(request: NextRequest) {
     request.nextUrl.pathname.startsWith('/signup')
 
   const isPublicPage =
-    request.nextUrl.pathname.startsWith('/landing')
+    request.nextUrl.pathname === '/'
 
   const isApiRoute = request.nextUrl.pathname.startsWith('/api/')
 
@@ -52,17 +52,17 @@ export async function updateSession(request: NextRequest) {
   // Authenticated user trying to access auth pages
   if (user && isAuthPage) {
     const url = request.nextUrl.clone()
-    url.pathname = '/'
+    url.pathname = '/app'
     return NextResponse.redirect(url)
   }
 
   // Admin route protection — single admin user by ID
-  const isAdminRoute = request.nextUrl.pathname.startsWith('/admin')
+  const isAdminRoute = request.nextUrl.pathname.startsWith('/app/admin')
   if (isAdminRoute) {
     const adminId = process.env.ADMIN_USER_ID ?? ''
     if (!user || !adminId || user.id !== adminId) {
       const url = request.nextUrl.clone()
-      url.pathname = '/'
+      url.pathname = '/app'
       return NextResponse.redirect(url)
     }
   }

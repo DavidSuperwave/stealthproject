@@ -139,7 +139,7 @@ export default function ProjectsDashboard() {
             {filteredProjects.map((project) => (
               <tr key={project.id} className="border-b border-border last:border-b-0 hover:bg-bg-elevated/50 transition-colors">
                 <td className="px-6 py-4">
-                  <Link href={`/upload?project=${project.id}`} className="flex items-center gap-3 group">
+                  <Link href={`/app/upload?project=${project.id}`} className="flex items-center gap-3 group">
                     <div className="w-10 h-10 rounded bg-bg-elevated flex items-center justify-center">
                       <Play className="w-4 h-4 text-accent" />
                     </div>

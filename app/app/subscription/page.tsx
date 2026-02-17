@@ -39,7 +39,7 @@ function SubscriptionContent() {
       const timer = setTimeout(() => {
         setShowSuccess(false)
         setShowCanceled(false)
-        window.history.replaceState({}, '', '/subscription')
+        window.history.replaceState({}, '', '/app/subscription')
       }, 5000)
       return () => clearTimeout(timer)
     }

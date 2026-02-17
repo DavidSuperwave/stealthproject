@@ -36,7 +36,7 @@ export default function SignupPage() {
 
     // If email confirmation is disabled, the user is auto-confirmed
     if (data.session) {
-      router.push('/')
+      router.push('/app')
       router.refresh()
       return
     }

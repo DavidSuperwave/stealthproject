@@ -74,8 +74,8 @@ export async function POST(req: NextRequest) {
       mode: 'payment',
       currency: 'mxn',
       line_items: [lineItem],
-      success_url: `${APP_URL}/subscription?success=true&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${APP_URL}/subscription?canceled=true`,
+      success_url: `${APP_URL}/app/subscription?success=true&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${APP_URL}/app/subscription?canceled=true`,
       metadata: {
         user_id: user.id,
         package_id: pkg.id,

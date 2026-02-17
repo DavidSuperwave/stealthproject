@@ -66,7 +66,7 @@ export default function AdminPage() {
     const res = await fetch('/api/admin/users')
     if (!res.ok) {
       if (res.status === 403) {
-        router.push('/')
+        router.push('/app')
         return
       }
       throw new Error('Failed to load users')
@@ -192,7 +192,7 @@ export default function AdminPage() {
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <p className="text-red-400 mb-4">{error}</p>
-          <Link href="/" className="text-accent hover:underline">
+          <Link href="/app" className="text-accent hover:underline">
             Volver al inicio
           </Link>
         </div>
@@ -204,7 +204,7 @@ export default function AdminPage() {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="h-16 bg-bg-secondary border-b border-border flex items-center px-6">
-        <Link href="/" className="flex items-center gap-2 text-text-secondary hover:text-white transition-colors mr-6">
+        <Link href="/app" className="flex items-center gap-2 text-text-secondary hover:text-white transition-colors mr-6">
           <ArrowLeft className="w-4 h-4" />
           <span className="text-sm">Volver</span>
         </Link>

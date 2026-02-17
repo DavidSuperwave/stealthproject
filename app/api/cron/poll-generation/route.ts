@@ -107,7 +107,7 @@ export async function GET(req: NextRequest) {
                 type: 'success',
                 title: '¡Video generado!',
                 body: `Tu video para "${projectName}" está listo para descargar.`,
-                href: `/upload?project=${job.project_id}`,
+                href: `/app/upload?project=${job.project_id}`,
               })
 
             // Send email notification if not already notified
@@ -171,7 +171,7 @@ export async function GET(req: NextRequest) {
                 type: 'error',
                 title: 'Error en generación',
                 body: `La generación del video para "${projectName}" falló. Intenta de nuevo.`,
-                href: `/upload?project=${job.project_id}`,
+                href: `/app/upload?project=${job.project_id}`,
               })
 
             // Send failure email

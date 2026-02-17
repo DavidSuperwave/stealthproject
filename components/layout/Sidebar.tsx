@@ -12,25 +12,25 @@ const navItems = [
     id: 'personalize' as const, 
     label: 'Personalizar video', 
     icon: Wand2,
-    href: '/personalize'
+    href: '/app/upload'
   },
   { 
     id: 'scripts' as const, 
     label: 'Biblioteca de guiones', 
     icon: FileText,
-    href: '/scripts'
+    href: '/app/scripts'
   },
   { 
     id: 'projects' as const, 
     label: 'Proyectos', 
     icon: Folder,
-    href: '/'
+    href: '/app'
   },
   { 
     id: 'subscription' as const, 
     label: 'Suscripción', 
     icon: CreditCard,
-    href: '/subscription'
+    href: '/app/subscription'
   },
 ]
 
@@ -39,7 +39,7 @@ export default function Sidebar({ activeItem }: SidebarProps) {
     <aside className="w-64 bg-bg-secondary flex flex-col">
       {/* Logo */}
       <div className="p-6 border-b border-border">
-        <Link href="/" className="flex items-center gap-2">
+        <Link href="/app" className="flex items-center gap-2">
           <span className="text-xl font-bold gradient-text">DOBLELABS</span>
         </Link>
       </div>

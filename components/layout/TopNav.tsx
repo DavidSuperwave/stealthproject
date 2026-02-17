@@ -20,34 +20,34 @@ const navItems: { id: NavId; label: string; icon: typeof Folder; href: string; d
     id: 'projects',
     label: 'Proyectos',
     icon: Folder,
-    href: '/',
+    href: '/app',
   },
   {
     id: 'personalize',
     label: 'Personalizar video',
     icon: Wand2,
-    href: '/personalize',
+    href: '/app/upload',
   },
   {
     id: 'scripts',
     label: 'Biblioteca de guiones',
     icon: FileText,
-    href: '/scripts',
+    href: '/app/scripts',
     disabled: true,
   },
   {
     id: 'subscription',
     label: 'Suscripción',
     icon: CreditCard,
-    href: '/subscription',
+    href: '/app/subscription',
   },
 ]
 
 function getActiveItem(pathname: string): NavId {
-  if (pathname === '/') return 'projects'
-  if (pathname.startsWith('/personalize') || pathname.startsWith('/upload')) return 'personalize'
-  if (pathname.startsWith('/scripts')) return 'scripts'
-  if (pathname.startsWith('/subscription')) return 'subscription'
+  if (pathname === '/app') return 'projects'
+  if (pathname.startsWith('/app/personalize') || pathname.startsWith('/app/upload')) return 'personalize'
+  if (pathname.startsWith('/app/scripts')) return 'scripts'
+  if (pathname.startsWith('/app/subscription')) return 'subscription'
   return 'projects'
 }
 
@@ -146,13 +146,14 @@ export default function TopNav({ credits }: TopNavProps) {
     const supabase = createClient()
     await supabase.auth.signOut()
     router.push('/login')
+
     router.refresh()
   }
 
   return (
     <header className="h-16 bg-bg-secondary border-b border-border flex items-center px-6 shrink-0">
       {/* Left — Logo */}
-      <Link href="/" className="flex items-center gap-2 mr-8">
+      <Link href="/app" className="flex items-center gap-2 mr-8">
         <span className="text-xl font-bold gradient-text">DOBLELABS</span>
       </Link>
 
@@ -263,9 +264,9 @@ export default function TopNav({ credits }: TopNavProps) {
           <HelpCircle className="w-4 h-4" />
         </button>
 
-        {/* Credits — links to /subscription */}
+        {/* Credits — links to /app/subscription */}
         <Link
-          href="/subscription"
+          href="/app/subscription"
           className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-bg-elevated border border-border hover:border-accent transition-colors"
         >
           <Plus className="w-4 h-4 text-accent" />
@@ -275,7 +276,7 @@ export default function TopNav({ credits }: TopNavProps) {
         {/* Admin link — visible only to admins */}
         {isUserAdmin && (
           <Link
-            href="/admin"
+            href="/app/admin"
             title="Panel de administración"
             className="w-8 h-8 rounded-full border border-border flex items-center justify-center text-text-secondary hover:text-accent hover:border-accent transition-colors"
           >
@@ -285,7 +286,7 @@ export default function TopNav({ credits }: TopNavProps) {
 
         {/* Settings */}
         <Link
-          href="/settings"
+          href="/app/settings"
           title="Configuración"
           className="w-8 h-8 rounded-full border border-border flex items-center justify-center text-text-secondary hover:text-white hover:border-accent transition-colors"
         >
