@@ -121,21 +121,18 @@ function UseCaseCard({
   )
 }
 
-// Video Player Component with Self-Hosted Video
+// Video Player Component with Vimeo Embed
 function VideoPlayer() {
   return (
     <div className="relative w-full aspect-video rounded-2xl overflow-hidden bg-[#0D0D0F] border border-[#2D2D35]">
-      <video
-        className="w-full h-full object-cover"
-        controls
-        preload="metadata"
-        playsInline
-      >
-        <source src="/videos/vsl.mp4" type="video/mp4" />
-        {/* Add more formats for better browser support */}
-        <source src="/videos/vsl.webm" type="video/webm" />
-        Tu navegador no soporta el elemento de video.
-      </video>
+      <iframe
+        src="https://player.vimeo.com/video/1165562311?h=fa0dedf19f&title=0&byline=0&portrait=0&badge=0&autopause=0&player_id=0&app_id=58479"
+        className="absolute top-0 left-0 w-full h-full"
+        frameBorder="0"
+        allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media"
+        title="DobleLabs VSL"
+      />
+      <script src="https://player.vimeo.com/api/player.js" />
     </div>
   )
 }
