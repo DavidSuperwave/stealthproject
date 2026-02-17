@@ -1,6 +1,6 @@
 /**
  * Close CRM Integration API Route
- * Sends new signups to Close CRM as leads with opportunities
+ * Sends new signups to Close CRM as leads with opportunities, notes, and tags
  */
 
 import { NextRequest, NextResponse } from 'next/server'
@@ -13,14 +13,16 @@ const CLOSE_CONFIG = {
   // Custom Field IDs
   CUSTOM_FIELDS: {
     FUENTE: 'cf_l0z2KbeLbKTEKnJAyYk7pXQOGkUd5VkWUZHooO6N05V', // Source
-    SIGNUP_DATE: 'signup_date', // We'll use note for this since it's not a custom field
-    USER_ID: 'user_id', // We'll use note for this
   },
   // Lead Status
   LEAD_STATUS: 'stat_akk8EK1dRWnxVJQ6o970bMIGKTU2MZVouQoDTGKgfmx', // Potential
   // Opportunity Pipeline
   PIPELINE_ID: 'pipe_6p1Uhj3YxEKHMqAKsEQFKX',
   OPPORTUNITY_STATUS: 'stat_nz5nAqr6UmQmIZhnP7cRkkbcPydIYkK5e8vqhdHsjQL', // Estableció Interés
+  // Tag name
+  TAG_NAME: 'doblelabs',
+  // Opportunity value in MXN
+  OPPORTUNITY_VALUE: 2000,
 }
 
 interface CloseLeadData {
@@ -41,6 +43,11 @@ interface CloseOpportunityData {
   pipeline_id: string
   value: number
   value_period: string
+  note: string
+}
+
+interface CloseNoteData {
+  lead_id: string
   note: string
 }
 
@@ -87,7 +94,91 @@ async function createOpportunity(oppData: CloseOpportunityData) {
   if (!response.ok) {
     const errorText = await response.text()
     console.error('[Close CRM] Opportunity API Error:', response.status, errorText)
-    // Don't throw - lead is already created, just log the error
+    return null
+  }
+
+  return response.json()
+}
+
+/**
+ * Add a note/activity to a lead
+ */
+async function addNoteToLead(noteData: CloseNoteData) {
+  const response = await fetch(`${CLOSE_API_URL}/activity/note/`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Basic ${Buffer.from(CLOSE_API_KEY + ':').toString('base64')}`,
+    },
+    body: JSON.stringify(noteData),
+  })
+
+  if (!response.ok) {
+    const errorText = await response.text()
+    console.error('[Close CRM] Note API Error:', response.status, errorText)
+    return null
+  }
+
+  return response.json()
+}
+
+/**
+ * Add a tag to a lead
+ */
+async function addTagToLead(leadId: string, tag: string) {
+  // First, check if tag exists or create it
+  const tagResponse = await fetch(`${CLOSE_API_URL}/tag/`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Basic ${Buffer.from(CLOSE_API_KEY + ':').toString('base64')}`,
+    },
+    body: JSON.stringify({
+      name: tag,
+      color: '#E040FB', // Purple to match your brand
+    }),
+  })
+
+  let tagId
+  if (tagResponse.ok) {
+    const tagData = await tagResponse.json()
+    tagId = tagData.id
+  } else {
+    // Tag might already exist, try to find it
+    const existingTags = await fetch(`${CLOSE_API_URL}/tag/`, {
+      headers: {
+        'Authorization': `Basic ${Buffer.from(CLOSE_API_KEY + ':').toString('base64')}`,
+      },
+    })
+    if (existingTags.ok) {
+      const tags = await existingTags.json()
+      const existingTag = tags.data?.find((t: { name: string }) => t.name.toLowerCase() === tag.toLowerCase())
+      if (existingTag) {
+        tagId = existingTag.id
+      }
+    }
+  }
+
+  if (!tagId) {
+    console.error('[Close CRM] Could not create or find tag')
+    return null
+  }
+
+  // Add tag to lead
+  const response = await fetch(`${CLOSE_API_URL}/lead/${leadId}/tags/`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Basic ${Buffer.from(CLOSE_API_KEY + ':').toString('base64')}`,
+    },
+    body: JSON.stringify({
+      tag_id: tagId,
+    }),
+  })
+
+  if (!response.ok) {
+    const errorText = await response.text()
+    console.error('[Close CRM] Tag API Error:', response.status, errorText)
     return null
   }
 
@@ -96,7 +187,7 @@ async function createOpportunity(oppData: CloseOpportunityData) {
 
 /**
  * POST /api/close/create-lead
- * Creates a new lead in Close CRM from signup data with opportunity
+ * Creates a new lead in Close CRM from signup data with opportunity, note, and tag
  */
 export async function POST(req: NextRequest) {
   try {
@@ -119,6 +210,13 @@ export async function POST(req: NextRequest) {
 
     const fullName = `${firstName} ${lastName || ''}`.trim()
     const signupDate = new Date().toISOString()
+    const formattedDate = new Date().toLocaleString('es-MX', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    })
 
     // Build lead data for Close CRM
     const leadData: CloseLeadData = {
@@ -135,7 +233,7 @@ export async function POST(req: NextRequest) {
         [CLOSE_CONFIG.CUSTOM_FIELDS.FUENTE]: source,
       },
       // Add signup info to description
-      description: `Signup Date: ${signupDate}\nUser ID: ${userId || 'N/A'}\nSource: ${source}`,
+      description: `Signup Date: ${formattedDate}\nUser ID: ${userId || 'N/A'}\nSource: ${source}`,
     }
 
     // Add phone if provided
@@ -147,26 +245,49 @@ export async function POST(req: NextRequest) {
     const closeResponse = await createCloseLead(leadData)
     console.log('[Close CRM] Lead created:', closeResponse.id)
 
-    // Create opportunity for the lead
+    // Create opportunity for the lead with $2000 MXN value
     const opportunityData: CloseOpportunityData = {
       lead_id: closeResponse.id,
       status_id: CLOSE_CONFIG.OPPORTUNITY_STATUS, // "Estableció Interés"
       pipeline_id: CLOSE_CONFIG.PIPELINE_ID,
-      value: 0, // Initial value - update when they purchase
+      value: CLOSE_CONFIG.OPPORTUNITY_VALUE, // 2000 MXN
       value_period: 'one_time',
-      note: `New signup from ${source} on ${signupDate}`,
+      note: `Nuevo registro de ${source} el ${formattedDate}. Valor estimado: $2,000 MXN`,
     }
 
     const opportunity = await createOpportunity(opportunityData)
     if (opportunity) {
-      console.log('[Close CRM] Opportunity created:', opportunity.id)
+      console.log('[Close CRM] Opportunity created:', opportunity.id, 'Value: $2000 MXN')
+    }
+
+    // Add note/activity to the lead
+    const noteData: CloseNoteData = {
+      lead_id: closeResponse.id,
+      note: `🎉 Nuevo registro en DobleLabs\n\n` +
+            `Fecha: ${formattedDate}\n` +
+            `Email: ${email}\n` +
+            `Teléfono: ${phone || 'No proporcionado'}\n` +
+            `User ID: ${userId || 'N/A'}\n` +
+            `Fuente: ${source}`,
+    }
+
+    const note = await addNoteToLead(noteData)
+    if (note) {
+      console.log('[Close CRM] Note added:', note.id)
+    }
+
+    // Add tag to lead
+    const tag = await addTagToLead(closeResponse.id, CLOSE_CONFIG.TAG_NAME)
+    if (tag) {
+      console.log('[Close CRM] Tag added:', CLOSE_CONFIG.TAG_NAME)
     }
 
     return NextResponse.json({
       success: true,
       closeLeadId: closeResponse.id,
       closeOpportunityId: opportunity?.id || null,
-      message: 'Lead and opportunity created in Close CRM',
+      closeNoteId: note?.id || null,
+      message: 'Lead, opportunity, note, and tag created in Close CRM',
     })
 
   } catch (error) {
