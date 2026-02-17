@@ -29,7 +29,7 @@ export async function GET() {
   }
 
   // Get profiles for user emails
-  const userIds = [...new Set((transactions ?? []).map((t) => t.user_id))]
+  const userIds = Array.from(new Set((transactions ?? []).map((t) => t.user_id)))
 
   const { data: authData } = await supabaseAdmin.auth.admin.listUsers({ perPage: 1000 })
   const emailMap = new Map(
