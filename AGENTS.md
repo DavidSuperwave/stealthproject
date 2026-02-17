@@ -37,9 +37,10 @@ Jaime AI Goon Generator is an AI-powered video personalization platform targetin
 │   └── subscription/page.tsx # Plans and credits management
 ├── components/
 │   ├── layout/               # Shell components
-│   │   ├── Layout.tsx        # Main app shell (Sidebar + Header)
-│   │   ├── Sidebar.tsx       # Navigation sidebar
-│   │   └── Header.tsx        # Top bar with credits, user info
+│   │   ├── Layout.tsx        # Main app shell (TopNav + content)
+│   │   ├── TopNav.tsx        # Horizontal top navigation bar (logo, nav, credits, user)
+│   │   ├── Sidebar.tsx       # DEPRECATED — replaced by TopNav
+│   │   └── Header.tsx        # DEPRECATED — merged into TopNav
 │   ├── personalize/          # Wizard step components (legacy)
 │   ├── projects/             # Dashboard components
 │   ├── script-workshop/      # Script management UI
@@ -82,7 +83,7 @@ NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 
-# LipDub API (server-side only — do NOT prefix with NEXT_PUBLIC_)
+# LipDub API (server-side only — proxied via /api/lipdub route)
 LIPDUB_API_KEY=your-lipdub-api-key
 
 # Optional: Supermemory for script storage
@@ -135,7 +136,7 @@ The `/upload` page implements a 4-step wizard:
 See `supabase/migrations/001_initial_schema.sql` for complete schema. Key tables:
 
 - `profiles` — extends `auth.users`
-- `subscription_plans` — pricing tiers (Free Trial, Starter, Pro, Enterprise)
+- `subscription_plans` — pricing tiers (Free, Starter, Pro, Enterprise)
 - `user_subscriptions` — user credits and billing
 - `projects` — video projects
 - `videos` — source video uploads with LipDub IDs
@@ -267,8 +268,9 @@ node test-api.js
 ### Adding a New Page
 
 1. Create file in `app/` directory
-2. Wrap with `Layout` component if it should show sidebar/header
+2. Wrap with `Layout` component if it should show top nav bar
 3. Use `(auth)` group for auth-related pages (no Layout wrapper)
+4. TopNav active state is automatic via `usePathname()` — add a new mapping in `TopNav.tsx` `getActiveItem()` if needed
 
 ### Adding a New API Integration
 
@@ -282,10 +284,52 @@ node test-api.js
 2. Apply changes via Supabase Dashboard SQL Editor
 3. Update RLS policies for new tables
 
+## Application Layout
+
+The app uses a **horizontal top-navigation bar** (`TopNav.tsx`) instead of a sidebar. All authenticated pages are wrapped in `<Layout>` which renders TopNav above the page content.
+
+- **TopNav** contains: Logo, nav links (Proyectos, Personalizar video, Guiones, Suscripción), and right-side actions (credits link, user, sign out).
+- **Active state** is derived from `usePathname()` — no manual `activeItem` prop needed.
+- **Credits badge** links to `/subscription` for plan management.
+- Old `Sidebar.tsx` and `Header.tsx` are deprecated and no longer used.
+
+See `docs/LAYOUT_AND_FLOW.md` for full layout and flow documentation.
+
+## Create Project Flow
+
+1. User clicks "Crear Proyecto" on the dashboard.
+2. Modal shows two project types:
+   - **Generar un video** — active and selectable (creates `personalization` project).
+   - **Traducir un video** — disabled with "Próximamente" badge (cannot be selected).
+3. User enters a **campaign name** (required).
+4. On continue: project is saved to Supabase, user is redirected to `/upload?project={id}`.
+
+## Credit System
+
+### Current Implementation
+- `user_subscriptions` table stores `credits_remaining` per user.
+- A free plan (0 credits) is auto-assigned on signup via database trigger.
+- `Layout` fetches credits via `getUserSubscription()` from `lib/db/queries.ts` and passes to `TopNav`.
+- Credits badge in TopNav links to `/subscription` page.
+
+### Implemented
+- Credit deduction on video generation via `/api/credits/deduct` (atomic, with fallback).
+- Pre-generation credit validation — early gate in `/upload` page blocks ShotCreator if credits < 5.
+- Stripe checkout integration for one-time credit package purchases (`/api/stripe/checkout`, `/api/stripe/webhook`).
+- Low-credit warning banner in Layout when credits < 5.
+- Refund on generation failure via `/api/credits/refund`.
+
+### Not Yet Implemented (Backend TODOs)
+- Usage metering (per-minute vs per-video — see `docs/UNIT_ECONOMICS.md`).
+- Stripe subscription recurring billing (currently one-time purchases only).
+
 ## Notes for AI Agents
 
 - The project uses **mock data** in many components (check for `mockProjects`, `mockScripts`)
 - Backend persistence is partially implemented — verify if features need database integration
 - The UI is dark theme **only** — no light mode support
-- Language is set to Spanish (`lang="es"`) but all content is in English
-- Credit system and subscription tiers are defined in database but UI uses hardcoded values
+- Language is set to Spanish (`lang="es"`) — UI copy should be in Spanish
+- Credit system is fully wired: deduction, refund, Stripe purchases, admin grants
+- Admin dashboard (`/admin`) is locked to a single user via `ADMIN_USER_ID` env var (UUID-based, not email)
+- `Sidebar.tsx` and `Header.tsx` are deprecated — use `TopNav.tsx` for navigation changes
+- "Translate a Video" feature is disabled in the Create Project modal with "Próximamente" badge

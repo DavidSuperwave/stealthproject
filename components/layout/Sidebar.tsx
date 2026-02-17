@@ -40,7 +40,7 @@ export default function Sidebar({ activeItem }: SidebarProps) {
       {/* Logo */}
       <div className="p-6 border-b border-border">
         <Link href="/" className="flex items-center gap-2">
-          <span className="text-xl font-bold gradient-text">JAIME AI</span>
+          <span className="text-xl font-bold gradient-text">DOBLELABS</span>
         </Link>
       </div>
 

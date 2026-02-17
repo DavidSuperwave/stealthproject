@@ -1,39 +1,119 @@
 'use client'
 
 import { useState } from 'react'
-import { X, Upload, Users, Video, Sparkles } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { X, Users, Sparkles, Lock } from 'lucide-react'
+import { createClient } from '@/lib/supabase/client'
+import { createProject } from '@/lib/db/queries'
 
 interface CreateProjectModalProps {
   isOpen: boolean
   onClose: () => void
+  onProjectCreated?: () => void
 }
 
-const projectTypes = [
+interface ProjectType {
+  id: string
+  title: string
+  description: string
+  icon: typeof Users
+  disabled?: boolean
+  comingSoonLabel?: string
+}
+
+const projectTypes: ProjectType[] = [
   {
-    id: 'personalize',
-    title: 'Personalize a Video',
-    description: 'Create personalized videos with dynamic variables like names and companies',
+    id: 'personalization',
+    title: 'Generar un video',
+    description: 'Crea videos personalizados con variables dinámicas como nombres y empresas',
     icon: Users,
   },
   {
-    id: 'translate',
-    title: 'Translate a Video',
-    description: 'Translate and dub your videos into different languages with AI lip-sync',
+    id: 'translation',
+    title: 'Traducir un video',
+    description: 'Traduce y dobla tus videos a diferentes idiomas con IA lip-sync',
     icon: Sparkles,
+    disabled: true,
+    comingSoonLabel: 'Próximamente',
   },
 ]
 
-export default function CreateProjectModal({ isOpen, onClose }: CreateProjectModalProps) {
+export default function CreateProjectModal({ isOpen, onClose, onProjectCreated }: CreateProjectModalProps) {
   const [selectedType, setSelectedType] = useState<string | null>(null)
+  const [projectName, setProjectName] = useState('')
+  const [nameError, setNameError] = useState(false)
+  const [isCreating, setIsCreating] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const router = useRouter()
 
   if (!isOpen) return null
+
+  async function handleContinue() {
+    if (!selectedType) return
+
+    const trimmedName = projectName.trim()
+    if (!trimmedName) {
+      setNameError(true)
+      return
+    }
+
+    setIsCreating(true)
+    setError(null)
+
+    let projectId: string | null = null
+
+    try {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+
+      if (!user) {
+        setError('Debes iniciar sesión para crear un proyecto.')
+        setIsCreating(false)
+        return
+      }
+
+      const { data, error: err } = await createProject(supabase, user.id, {
+        name: trimmedName,
+        type: selectedType as 'personalization' | 'translation',
+      })
+
+      if (err) {
+        console.error('Project creation failed:', err)
+        setError(err.message || 'No se pudo crear el proyecto. Intenta de nuevo.')
+        setIsCreating(false)
+        return
+      }
+
+      if (!data?.id) {
+        setError('No se pudo crear el proyecto. Intenta de nuevo.')
+        setIsCreating(false)
+        return
+      }
+
+      projectId = data.id
+    } catch (e) {
+      console.error('Unexpected error creating project:', e)
+      setError('Error inesperado. Verifica tu conexión e intenta de nuevo.')
+      setIsCreating(false)
+      return
+    }
+
+    onClose()
+    setSelectedType(null)
+    setProjectName('')
+    setNameError(false)
+    onProjectCreated?.()
+
+    router.push(`/upload?project=${projectId}&name=${encodeURIComponent(trimmedName)}`)
+    setIsCreating(false)
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
       <div className="w-full max-w-2xl bg-bg-secondary rounded-xl border border-border p-6">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-semibold text-white">Create New Project</h2>
+          <h2 className="text-xl font-semibold text-white">Crear proyecto</h2>
           <button 
             onClick={onClose}
             className="p-2 hover:bg-bg-elevated rounded-lg transition-colors"
@@ -47,40 +127,84 @@ export default function CreateProjectModal({ isOpen, onClose }: CreateProjectMod
           {projectTypes.map((type) => {
             const Icon = type.icon
             const isSelected = selectedType === type.id
-            
+            const isDisabled = type.disabled === true
+
             return (
               <button
                 key={type.id}
-                onClick={() => setSelectedType(type.id)}
+                onClick={() => {
+                  if (!isDisabled) setSelectedType(type.id)
+                }}
+                disabled={isDisabled}
                 className={`
-                  p-6 rounded-xl border-2 text-left transition-all
-                  ${isSelected 
-                    ? 'border-accent bg-accent/10' 
-                    : 'border-border bg-bg-elevated hover:border-text-muted'
+                  relative p-6 rounded-xl border-2 text-left transition-all
+                  ${isDisabled
+                    ? 'border-border bg-bg-elevated opacity-50 cursor-not-allowed'
+                    : isSelected
+                      ? 'border-accent bg-accent/10'
+                      : 'border-border bg-bg-elevated hover:border-text-muted'
                   }
                 `}
               >
-                <Icon className={`w-8 h-8 mb-4 ${isSelected ? 'text-accent' : 'text-text-secondary'}`} />
-                <h3 className="font-semibold text-white mb-2">{type.title}</h3>
-                <p className="text-sm text-text-secondary">{type.description}</p>
+                {/* "Próximamente" badge for disabled items */}
+                {isDisabled && type.comingSoonLabel && (
+                  <span className="absolute top-3 right-3 flex items-center gap-1 px-2 py-0.5 rounded-full bg-bg-secondary border border-border text-xs text-text-muted font-medium">
+                    <Lock className="w-3 h-3" />
+                    {type.comingSoonLabel}
+                  </span>
+                )}
+
+                <Icon className={`w-8 h-8 mb-4 ${isDisabled ? 'text-text-muted' : isSelected ? 'text-accent' : 'text-text-secondary'}`} />
+                <h3 className={`font-semibold mb-2 ${isDisabled ? 'text-text-muted' : 'text-white'}`}>{type.title}</h3>
+                <p className={`text-sm ${isDisabled ? 'text-text-muted' : 'text-text-secondary'}`}>{type.description}</p>
               </button>
             )
           })}
         </div>
 
+        {/* Campaign Name — required */}
+        <div className="mb-6">
+          <label className="block text-sm font-medium text-text-secondary mb-2">
+            Nombre de la campaña <span className="text-accent">*</span>
+          </label>
+          <input
+            type="text"
+            value={projectName}
+            onChange={(e) => {
+              setProjectName(e.target.value)
+              if (nameError) setNameError(false)
+            }}
+            placeholder="Ej: Campaña Q1 2026"
+            className={`w-full px-4 py-2.5 bg-bg-elevated border rounded-lg text-white placeholder-text-muted focus:outline-none focus:border-accent transition-colors ${
+              nameError ? 'border-red-500' : 'border-border'
+            }`}
+          />
+          {nameError && (
+            <p className="mt-1.5 text-xs text-red-400">
+              Ingresa un nombre para tu campaña antes de continuar.
+            </p>
+          )}
+        </div>
+
+        {error && (
+          <p className="mb-4 text-sm text-red-400">{error}</p>
+        )}
+
         {/* Footer */}
         <div className="flex justify-end gap-3">
-          <button 
+          <button
             onClick={onClose}
-            className="px-4 py-2 text-text-secondary hover:text-white transition-colors"
+            disabled={isCreating}
+            className="px-4 py-2 text-text-secondary hover:text-white transition-colors disabled:opacity-50"
           >
-            Cancel
+            Cancelar
           </button>
           <button
-            disabled={!selectedType}
+            onClick={handleContinue}
+            disabled={!selectedType || isCreating}
             className="px-4 py-2 bg-accent hover:bg-accent-hover disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-colors"
           >
-            Continue
+            {isCreating ? 'Creando...' : 'Continuar'}
           </button>
         </div>
       </div>

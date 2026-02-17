@@ -1,12 +1,12 @@
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Jaime AI — Videos Personalizados con IA | Escala sin perder autenticidad',
-  description: 'Crea videos personalizados a escala con tu rostro, tu voz y tu mensaje. Sin avatares, sin voces sintéticas. Diseñado para equipos de ventas en México.',
-  keywords: ['video personalizado', 'ia', 'ventas', 'marketing', 'lip sync', 'méxico', 'outreach'],
+  title: 'DobleLabs — Clonación de Video con IA | Nunca más vuelvas a grabarte',
+  description: 'Clonate con IA sin perder el realismo, emoción o calidad de tu vídeo original. Ideal para crear contenido, hacer anuncios, o crear cursos.',
+  keywords: ['clonación de video', 'ia', 'video con ia', 'doblaje', 'lip sync', 'creadores de contenido', 'cursos'],
   openGraph: {
-    title: 'Jaime AI — Videos Personalizados con IA',
-    description: 'Crea videos personalizados a escala con tu rostro, tu voz y tu mensaje.',
+    title: 'DobleLabs — Clonación de Video con IA',
+    description: 'Clonate con IA sin perder el realismo, emoción o calidad de tu vídeo original.',
     type: 'website',
   },
 }

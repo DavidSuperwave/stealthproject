@@ -53,7 +53,6 @@ const navItems: NavItem[] = [
 // components/layout/Header.tsx
 interface HeaderProps {
   credits: number;
-  trialDaysRemaining: number;
   user: { name: string; avatar?: string };
 }
 
@@ -61,8 +60,7 @@ interface HeaderProps {
 // Center: Breadcrumb navigation
 // Right: 
 //   - Help icon (?)
-//   - Credits badge (+ 20.00 credits)
-//   - Trial badge (14 days remaining - pink pill)
+//   - Credits badge (+ 0.00 credits)
 //   - User avatar
 ```
 
@@ -380,7 +378,6 @@ interface Project {
 interface Subscription {
   plan: 'free' | 'starter' | 'pro' | 'enterprise';
   credits: number;
-  trialEndsAt?: string;
   monthlyUsage: {
     videosGenerated: number;
     creditsUsed: number;
@@ -729,11 +726,6 @@ GET /credits
     "used_this_month": 3000,
     "resets_at": "2026-03-01T00:00:00Z"
   },
-  "trial": {
-    "is_active": true,
-    "days_remaining": 14,
-    "trial_credits": 100
-  }
 }
 ```
 
@@ -1094,7 +1086,7 @@ jaime-ai-goon-generator/
 
 ### Phase 1: Core UI (Week 1)
 - [ ] Sidebar navigation
-- [ ] Header with credits/trial
+- [ ] Header with credits
 - [ ] Dark theme setup
 - [ ] Projects dashboard
 - [ ] Create project button

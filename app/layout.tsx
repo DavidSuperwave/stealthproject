@@ -5,8 +5,8 @@ import '@/styles/globals.css'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'Jaime AI — Generador de Videos Personalizados',
-  description: 'Videos personalizados con IA para el mercado mexicano',
+  title: 'DobleLabs — Clonación de Video con IA',
+  description: 'Clonate con IA sin perder el realismo, emoción o calidad de tu vídeo original',
 }
 
 export default function RootLayout({

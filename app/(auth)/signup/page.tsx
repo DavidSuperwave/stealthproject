@@ -70,7 +70,7 @@ export default function SignupPage() {
     <>
       <h2 className="text-xl font-semibold text-white mb-1">Crear una cuenta</h2>
       <p className="text-text-secondary text-sm mb-6">
-        Comienza a usar Jaime AI
+        Comienza a usar DobleLabs
       </p>
 
       {error && (

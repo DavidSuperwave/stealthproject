@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Upload, X, CheckCircle, AlertCircle, Video, FileVideo } from 'lucide-react'
+import { Upload, X, CheckCircle, AlertCircle, Video, FileVideo, RefreshCw } from 'lucide-react'
 
 interface VideoUploadProps {
   onUpload: (file: File) => void
@@ -10,6 +10,8 @@ interface VideoUploadProps {
   isUploading?: boolean
   uploadProgress?: number
   uploadComplete?: boolean
+  error?: string | null
+  onRetry?: () => void
 }
 
 export default function VideoUpload({ 
@@ -18,7 +20,9 @@ export default function VideoUpload({
   onCancel, 
   isUploading = false, 
   uploadProgress = 0,
-  uploadComplete = false
+  uploadComplete = false,
+  error = null,
+  onRetry,
 }: VideoUploadProps) {
   const [isDragging, setIsDragging] = useState(false)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
@@ -218,8 +222,33 @@ export default function VideoUpload({
         </div>
       )}
 
+      {/* Upload Error */}
+      {error && !isUploading && (
+        <div className="bg-bg-secondary rounded-xl border border-red-500/50 p-6">
+          <div className="flex items-center gap-3 mb-4">
+            <AlertCircle className="w-6 h-6 text-red-400 flex-shrink-0" />
+            <div>
+              <p className="text-white font-medium">Error al subir el video</p>
+              <p className="text-sm text-red-400 mt-1">{error}</p>
+            </div>
+          </div>
+          <div className="flex gap-3">
+            <button
+              onClick={() => {
+                onRetry?.()
+                setSelectedFile(null)
+              }}
+              className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-bg-elevated hover:bg-border text-white rounded-lg font-medium transition-colors"
+            >
+              <RefreshCw className="w-4 h-4" />
+              Reintentar
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Upload Complete - Continue Button */}
-      {uploadComplete && !isUploading && (
+      {uploadComplete && !isUploading && !error && (
         <div className="bg-bg-secondary rounded-xl border border-accent p-6 text-center">
           <div className="flex items-center justify-center gap-2 mb-4">
             <CheckCircle className="w-6 h-6 text-green-400" />

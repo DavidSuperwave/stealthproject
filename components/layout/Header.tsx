@@ -9,10 +9,9 @@ import type { User as SupabaseUser } from '@supabase/supabase-js'
 
 interface HeaderProps {
   credits: number
-  trialDaysRemaining: number
 }
 
-export default function Header({ credits, trialDaysRemaining }: HeaderProps) {
+export default function Header({ credits }: HeaderProps) {
   const router = useRouter()
   const [user, setUser] = useState<SupabaseUser | null>(null)
 
@@ -53,11 +52,6 @@ export default function Header({ credits, trialDaysRemaining }: HeaderProps) {
           <Plus className="w-4 h-4 text-accent" />
           <span className="text-sm font-medium">{credits.toFixed(2)} créditos</span>
         </button>
-
-        {/* Trial Badge */}
-        <div className="px-3 py-1.5 rounded-full bg-pink-600 text-white text-sm font-medium">
-          {trialDaysRemaining} días restantes
-        </div>
 
         {/* User email */}
         {user && (

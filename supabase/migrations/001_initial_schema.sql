@@ -60,7 +60,7 @@ create table public.subscription_plans (
 
 -- Seed the plans that match the UI
 insert into public.subscription_plans (name, price_cents, credits_monthly, features, tier_level) values
-  ('Free Trial',  null,  20,   '{"20 credits","14-day trial","Standard quality"}', 0),
+  ('Free Trial',  null,  0,    '{"0 credits","Standard quality"}', 0),
   ('Starter',     2900,  100,  '{"100 credits/month","Basic support","Standard quality"}', 1),
   ('Pro',         9900,  500,  '{"500 credits/month","Priority support","High quality","API access"}', 2),
   ('Enterprise',  null,  null, '{"Unlimited credits","Dedicated support","Premium quality","Custom integration"}', 3);
@@ -73,7 +73,7 @@ create table public.user_subscriptions (
   id                    uuid primary key default gen_random_uuid(),
   user_id               uuid not null references public.profiles(id) on delete cascade,
   plan_id               uuid not null references public.subscription_plans(id),
-  credits_remaining     numeric(10,2) not null default 20.00,
+  credits_remaining     numeric(10,2) not null default 0,
   trial_days_remaining  integer,
   status                text not null default 'active'
                         check (status in ('active','cancelled','expired','past_due')),
@@ -99,7 +99,7 @@ begin
   select id into free_plan_id from public.subscription_plans where name = 'Free Trial' limit 1;
   if free_plan_id is not null then
     insert into public.user_subscriptions (user_id, plan_id, credits_remaining, trial_days_remaining, status)
-    values (new.id, free_plan_id, 20.00, 14, 'active');
+    values (new.id, free_plan_id, 0, NULL, 'active');
   end if;
   return new;
 end;
@@ -398,6 +398,13 @@ create policy "Users can view own generated videos"
 create policy "Users can insert own generated videos"
   on public.generated_videos for insert
   with check (job_id in (
+    select gj.id from public.generation_jobs gj
+    join public.projects p on p.id = gj.project_id
+    where p.user_id = auth.uid()
+  ));
+create policy "Users can update own generated videos"
+  on public.generated_videos for update
+  using (job_id in (
     select gj.id from public.generation_jobs gj
     join public.projects p on p.id = gj.project_id
     where p.user_id = auth.uid()

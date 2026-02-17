@@ -16,7 +16,10 @@ import {
   Menu,
   X,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Shield,
+  Zap,
+  Move
 } from 'lucide-react'
 import Link from 'next/link'
 
@@ -85,7 +88,7 @@ function StepCard({
         <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-[#E040FB] to-[#B027F7] flex items-center justify-center text-white font-bold text-lg flex-shrink-0">
           {number}
         </div>
-        {number < 5 && (
+        {number < 4 && (
           <div className="w-0.5 flex-1 bg-gradient-to-b from-[#E040FB]/50 to-transparent mt-4" />
         )}
       </div>
@@ -156,34 +159,26 @@ export default function LandingPage() {
 
   const navLinks = [
     { href: '#como-funciona', label: 'Cómo Funciona' },
-    { href: '#casos-de-uso', label: 'Casos de Uso' },
+    { href: '#para-quien', label: 'Para Quién' },
     { href: '#preguntas', label: 'Preguntas' },
   ]
 
   const faqs = [
     {
-      question: '¿Qué hace que los videos personalizados sean más efectivos que el contenido de video regular?',
-      answer: 'Los videos personalizados ofrecen tasas de engagement significativamente más altas porque hablan directamente de las necesidades específicas del cliente, sus puntos de dolor e intereses. Al personalizar el mensaje para diferentes segmentos de audiencia, creas conexiones emocionales más fuertes que impulsan mejores tasas de conversión, mayor tiempo de visualización y relaciones mejoradas con el cliente en comparación con el contenido de video único para todos.'
+      question: '¿Puedo crear contenido con doblaje de IA sin grabar?',
+      answer: 'Sí, Doble Labs te permite crear contenido sin necesidad de grabar utilizando tu "doble digital". Simplemente cargas tu audio, y el sistema generará videos tuyos hablando con sincronización labial perfecta, ahorrándote tiempo y recursos mientras mantienes tu presencia auténtica.'
     },
     {
-      question: '¿Qué tan rápido puedo crear variaciones de video personalizadas con LipDub AI?',
-      answer: 'Una vez que subes tu video base, puedes generar nuevas versiones personalizadas en solo minutos. Nuestra IA procesa la sincronización labial automáticamente, por lo que puedes crear docenas o cientos de variaciones en el tiempo que tradicionalmente tomaría filmar solo un video, permitiendo un despliegue y optimización rápida de campañas.'
+      question: '¿El doblaje con IA puede preservar la emoción y la interpretación?',
+      answer: 'Sí, la tecnología de doblaje de Doble Labs preserva las expresiones faciales y los matices emocionales en tus videos. El sistema mantiene la articulación, la emoción y la fidelidad de textura incluso en escenas dinámicas con primeros planos y movimiento, asegurando que tu video se vea REAL, no algo claramente hecho con IA.'
     },
     {
-      question: '¿Puedo personalizar videos para diferentes idiomas y regiones?',
-      answer: 'Sí, LipDub AI admite personalización en más de 150 idiomas y dialectos con clonación de voz perfecta y sincronización labial. Puedes crear versiones localizadas que mantienen la emoción y el rendimiento del hablante original mientras adaptas el mensaje para diferentes contextos culturales, permitiendo campañas de video personalizadas verdaderamente globales.'
+      question: '¿Qué formatos de video son compatibles?',
+      answer: 'La plataforma actualmente admite archivos MOV o MP4 en resolución profesional, hasta 4K, tanto material sin corrección de color como con corrección aplicada. Los espacios de color compatibles incluyen sRGB y Rec709. Para obtener los mejores resultados, evita material manipulado, como superposiciones de texto sobre el rostro o algo que obstruya tu cara. Toma en cuenta que el vídeo maestro que cargues es el vídeo con el cual saldrán todos los vídeos finales, entonces procura cargarlo de la mejor manera.'
     },
     {
-      question: '¿Qué formatos de video y niveles de calidad admite LipDub AI?',
-      answer: 'LipDub AI admite archivos profesionales MOV y MP4 hasta resolución 4K, trabajando con material sin graduar y graduado en espacios de color sRGB y Rec709. Esto asegura que tus videos personalizados mantengan estándares de calidad broadcast independientemente de tu material fuente o canal de distribución previsto.'
-    },
-    {
-      question: '¿Cómo impacta el marketing de video personalizado en las tasas de conversión?',
-      answer: 'Los videos personalizados típicamente ven tasas de conversión 2-5x más altas en comparación con el contenido de video genérico porque abordan necesidades específicas del cliente y crean conexiones emocionales más fuertes. La capacidad de probar múltiples versiones personalizadas también permite una optimización continua, liderando a un rendimiento mejorado a lo largo del tiempo.'
-    },
-    {
-      question: '¿Es rentable crear videos personalizados a escala?',
-      answer: 'La producción tradicional de video personalizado cuesta miles de dólares por variación, haciendo que las campañas a gran escala sean prohibitivamente caras. LipDub AI reduce estos costos en más del 90% al eliminar la necesidad de múltiples filmaciones, permitiéndote crear cientos de videos personalizados por el mismo presupuesto que anteriormente producía solo unos pocos.'
+      question: '¿Por qué no usar HeyGen u otras soluciones más económicas para clonarte?',
+      answer: 'Claro que puedes usarlas. Pero esta solución no está diseñada para quien solo quiere "algo que más o menos funcione". Está pensada para quien quiere videos de máxima calidad, que pasen completamente desapercibidos… no para quien está cómodo con algo que grita "esto es IA" a los tres segundos. Si tu prioridad es simplemente subir contenido por subir, sin importar si se ve artificial o genérico, probablemente no necesites esto. Pero si quieres que tu clon digital se vea real, natural y profesional… entonces estamos hablando el mismo idioma.'
     }
   ]
 
@@ -199,7 +194,7 @@ export default function LandingPage() {
                 <Video className="w-4 h-4 text-white" />
               </div>
               <span className="text-xl font-bold text-white">
-                Jaime<span className="text-[#E040FB]">AI</span>
+                Doble<span className="text-[#E040FB]">Labs</span>
               </span>
             </Link>
 
@@ -281,16 +276,12 @@ export default function LandingPage() {
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
             <div className="text-center lg:text-left">
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white leading-tight mb-6">
-                Una Mejor Forma de{' '}
-                <span className="gradient-text">Personalizar Video</span>
+                Nunca más vuelvas a{' '}
+                <span className="gradient-text">grabarte</span>
               </h1>
-              <p className="text-lg sm:text-xl text-[#9CA3AF] mb-6 leading-relaxed">
-                La IA hizo la personalización de video más rápida, pero no mejor. 
-                Los avatares y voces sintéticas rompen la confianza.
-              </p>
-              <p className="text-lg text-white mb-8">
-                <strong className="text-[#E040FB]">Jaime AI elimina ese compromiso.</strong>{' '}
-                Te permitimos personalizar video real — tu rostro, tu voz, tu mensaje — a escala.
+              <p className="text-lg sm:text-xl text-[#9CA3AF] mb-8 leading-relaxed">
+                Clonate con IA sin perder el realismo, emoción o calidad de tu vídeo original. 
+                Ideal para crear contenido, hacer anuncios, o crear cursos.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
                 <Link
@@ -316,11 +307,11 @@ export default function LandingPage() {
                 </div>
                 <div className="flex items-center gap-2">
                   <CheckCircle2 className="w-4 h-4 text-[#E040FB]" />
-                  <span>150+ idiomas</span>
+                  <span>Calidad 4K</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <CheckCircle2 className="w-4 h-4 text-[#E040FB]" />
-                  <span>Calidad 4K</span>
+                  <span>Tus datos te pertenecen</span>
                 </div>
               </div>
             </div>
@@ -340,40 +331,40 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
-              Por Qué <span className="gradient-text">Jaime AI</span> Es Diferente
+              Por Qué <span className="gradient-text">Doble Labs</span> Es Diferente
             </h2>
             <p className="text-[#9CA3AF] text-lg max-w-2xl mx-auto">
-              No más compromisos entre volumen y realismo
+              Tecnología propietaria diseñada para resultados que pasan desapercibidos
             </p>
           </div>
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
             <FeatureCard
               icon={CheckCircle2}
-              title="Realismo Que Genera Confianza"
-              description="Cada video se ve y se siente auténtico con habla natural, sincronización labial perfecta y tono humano real. Sin avatares. Sin automatización extraña."
+              title="Alta Fidelidad"
+              description="Doble Labs preserva los detalles únicos de los dientes, el vello facial, el tono y la textura de la piel del ponente mejor que cualquier otra solución."
             />
             <FeatureCard
-              icon={Users}
-              title="Personalización Que Escala"
-              description="Graba una vez. Importa tu CSV o datos de CRM. Genera cientos o miles de videos 1-a-1 que tu equipo puede enviar con confianza."
+              icon={Shield}
+              title="Propiedad de los Datos"
+              description="No entrenamos ni mejoramos nuestros modelos con el contenido de video que subes. Tus datos siempre te pertenecen por defecto."
             />
             <FeatureCard
-              icon={Building2}
-              title="Diseñado Para Flujos de Ventas"
-              description="Diseñado para outbound, seguimientos, LinkedIn y secuencias de email. Rápido de crear, seguro para la marca y listo para enviar donde tu equipo ya trabaja."
+              icon={Move}
+              title="Movimiento Dinámico"
+              description="Nuestra calidad se mantiene consistente durante el movimiento natural, manteniendo la sincronización labial alineada incluso cuando la pose, la postura, la iluminación o la distancia cambian."
             />
             <FeatureCard
-              icon={Sparkles}
-              title="Resultados Que Impulsan Pipeline"
-              description="Los equipos que usan video personalizado ven hasta 2x más respuestas y reuniones agendadas en comparación con outreach de email estándar."
+              icon={Zap}
+              title="Modelo Propietario"
+              description="La mayoría de las herramientas de clones con IA utilizan los mismos modelos estándar disponibles en el mercado. Doble Labs es completamente propio, construido para ofrecer articulación natural, rendimiento confiable y resultados fieles a la realidad."
             />
           </div>
         </div>
       </section>
 
       {/* Use Cases Section */}
-      <section id="casos-de-uso" className="py-20 px-4 sm:px-6 lg:px-8">
+      <section id="para-quien" className="py-20 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
@@ -383,24 +374,24 @@ export default function LandingPage() {
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
             <UseCaseCard
-              icon={Send}
-              title="Ventas Outbound"
-              description="Envía videos personalizados que realmente obtienen respuestas"
+              icon={Users}
+              title="Profesionistas"
+              description="Que quieren empezar a crear contenido en redes sociales y conseguir clientes"
             />
             <UseCaseCard
               icon={Building2}
-              title="Campañas ABM"
-              description="Personaliza contenido para cada cuenta objetivo sin regrabar"
+              title="Agencias"
+              description="Que quieren ayudar a sus clientes con contenido y anuncios y quieren un proceso más sencillo"
             />
             <UseCaseCard
-              icon={Users}
-              title="Marketing al Cliente"
-              description="Reengancha, haz upsell o agradece a clientes con video auténtico"
+              icon={Video}
+              title="Creadores de Contenido"
+              description="Buscando liberar su tiempo de grabación o incorporar otro pilar de contenido"
             />
             <UseCaseCard
-              icon={Mail}
-              title="Email Marketing"
-              description="Destaca en bandejas de entrada y feeds saturados"
+              icon={Sparkles}
+              title="Vendedores de Cursos"
+              description="Que quieren grabar módulos de alta calidad sin estar horas grabando el material o gastando pequeñas fortunas en estudios de producción"
             />
           </div>
         </div>
@@ -415,39 +406,33 @@ export default function LandingPage() {
                 Cómo <span className="gradient-text">Funciona</span>
               </h2>
               <p className="text-[#9CA3AF] text-lg mb-10">
-                De la grabación al envío en simples pasos
+                Tan simple que cualquier persona así no tenga experiencia con tecnología lo puede usar
               </p>
 
               <div className="space-y-0">
                 <StepCard
                   number={1}
                   icon={Video}
-                  title="Graba Una Vez"
-                  description="Graba un mensaje auténtico — sin guiones, sin repeticiones."
+                  title="Graba un vídeo maestro"
+                  description="El vídeo el cual quieres usar para clonarte."
                 />
                 <StepCard
                   number={2}
-                  icon={Sparkles}
-                  title="Resalta Tus Variables"
-                  description="Nuestra IA transcribe tu video. Resalta palabras como nombres o empresas, haz clic en Agregar Variable y listo."
+                  icon={FileSpreadsheet}
+                  title="Crea un proyecto"
+                  description="Aquí es donde estará tu proyecto de clon."
                 />
                 <StepCard
                   number={3}
-                  icon={FileSpreadsheet}
-                  title="Importa Tus Datos"
-                  description="Sube un CSV o conecta tu CRM. Emparejamos automáticamente cada variable con tus contactos."
+                  icon={Sparkles}
+                  title="Cargar audio"
+                  description="Cargas un audio del guión del vídeo que quieres crear."
                 />
                 <StepCard
                   number={4}
-                  icon={Sparkles}
-                  title="Genera Tus Videos"
-                  description="Obtén cientos de videos personalizados hiperrealistas que se ven y suenan completamente naturales."
-                />
-                <StepCard
-                  number={5}
                   icon={Send}
-                  title="Envía A Cualquier Lugar"
-                  description="Comparte videos personalizados vía email, mensajes de LinkedIn o campañas — sin afectar la entregabilidad."
+                  title="Genera tu vídeo final"
+                  description="Obtén tu vídeo maestro sincronizado con el audio personalizado obteniendo la versión final, lista para publicar o editar."
                 />
               </div>
             </div>
@@ -479,10 +464,10 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
             {[
-              { value: '2x', label: 'Más Respuestas' },
-              { value: '90%', label: 'Reducción de Costos' },
-              { value: '150+', label: 'Idiomas Soportados' },
               { value: '4K', label: 'Calidad de Video' },
+              { value: '100%', label: 'Tus Datos' },
+              { value: 'Real', label: 'Resultados' },
+              { value: 'Simple', label: 'De Usar' },
             ].map((stat, index) => (
               <div key={index} className="text-center">
                 <div className="text-4xl sm:text-5xl font-bold gradient-text mb-2">
@@ -525,10 +510,10 @@ export default function LandingPage() {
             
             <div className="relative z-10">
               <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
-                Obtén Acceso Temprano al Video Personalizado Real
+                Comienza a Crear Videos Sin Grabar
               </h2>
               <p className="text-[#9CA3AF] text-lg mb-8 max-w-2xl mx-auto">
-                Estamos construyendo la próxima generación de video personalizado para equipos de ventas modernos. Únete a la lista de espera para acceso temprano.
+                Únete a los creadores que ya están ahorrando horas de grabación mientras mantienen su presencia auténtica.
               </p>
               
               <form 
@@ -583,7 +568,7 @@ export default function LandingPage() {
                 <Video className="w-4 h-4 text-white" />
               </div>
               <span className="text-xl font-bold text-white">
-                Jaime<span className="text-[#E040FB]">AI</span>
+                Doble<span className="text-[#E040FB]">Labs</span>
               </span>
             </Link>
 
@@ -602,7 +587,7 @@ export default function LandingPage() {
 
             {/* Copyright */}
             <p className="text-[#6B7280] text-sm">
-              © 2025 Jaime AI. Todos los derechos reservados.
+              © 2025 Doble Labs. Todos los derechos reservados.
             </p>
           </div>
         </div>

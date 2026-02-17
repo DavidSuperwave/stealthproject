@@ -9,10 +9,10 @@ export default function AuthLayout({
         {/* Logo */}
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold bg-gradient-accent bg-clip-text text-transparent">
-            JAIME AI
+            DOBLELABS
           </h1>
           <p className="text-text-secondary text-sm mt-1">
-            Video personalization platform
+            Clonación de video con IA
           </p>
         </div>
 

@@ -40,8 +40,10 @@ export async function updateSession(request: NextRequest) {
   const isPublicPage =
     request.nextUrl.pathname.startsWith('/landing')
 
+  const isApiRoute = request.nextUrl.pathname.startsWith('/api/')
+
   // Unauthenticated user trying to access protected route
-  if (!user && !isAuthPage && !isPublicPage && !request.nextUrl.pathname.startsWith('/auth/callback')) {
+  if (!user && !isAuthPage && !isPublicPage && !isApiRoute && !request.nextUrl.pathname.startsWith('/auth/callback')) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
     return NextResponse.redirect(url)
@@ -52,6 +54,17 @@ export async function updateSession(request: NextRequest) {
     const url = request.nextUrl.clone()
     url.pathname = '/'
     return NextResponse.redirect(url)
+  }
+
+  // Admin route protection — single admin user by ID
+  const isAdminRoute = request.nextUrl.pathname.startsWith('/admin')
+  if (isAdminRoute) {
+    const adminId = process.env.ADMIN_USER_ID ?? ''
+    if (!user || !adminId || user.id !== adminId) {
+      const url = request.nextUrl.clone()
+      url.pathname = '/'
+      return NextResponse.redirect(url)
+    }
   }
 
   return supabaseResponse
