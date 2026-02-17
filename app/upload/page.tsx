@@ -51,6 +51,7 @@ async function saveDraft(
   payload: {
     video?: Record<string, unknown>
     audio?: Record<string, unknown>
+    generation?: Record<string, unknown>
     status?: string
   }
 ) {
