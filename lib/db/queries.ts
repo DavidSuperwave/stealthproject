@@ -48,6 +48,51 @@ export async function getProjects(
   return (data ?? []) as ProjectRow[]
 }
 
+export interface ProjectWithGeneration extends ProjectRow {
+  generation_status: string | null
+  shot_id: number | null
+  generate_id: string | null
+}
+
+export async function getProjectsWithGeneration(
+  supabase: SupabaseClient,
+  userId: string
+): Promise<ProjectWithGeneration[]> {
+  const projects = await getProjects(supabase, userId)
+  if (projects.length === 0) return []
+
+  const projectIds = projects.map(p => p.id)
+
+  // Fetch latest generation job per project
+  const { data: jobs } = await supabase
+    .from('generation_jobs')
+    .select('project_id, shot_id, generate_id, status')
+    .in('project_id', projectIds)
+    .order('created_at', { ascending: false })
+
+  // Build a map: project_id → latest generation job
+  const jobMap = new Map<string, { status: string; shot_id: number | null; generate_id: string | null }>()
+  for (const job of (jobs ?? [])) {
+    if (!jobMap.has(job.project_id)) {
+      jobMap.set(job.project_id, {
+        status: job.status,
+        shot_id: job.shot_id,
+        generate_id: job.generate_id,
+      })
+    }
+  }
+
+  return projects.map(p => {
+    const gen = jobMap.get(p.id)
+    return {
+      ...p,
+      generation_status: gen?.status ?? null,
+      shot_id: gen?.shot_id ?? null,
+      generate_id: gen?.generate_id ?? null,
+    }
+  })
+}
+
 export async function getProject(
   supabase: SupabaseClient,
   projectId: string

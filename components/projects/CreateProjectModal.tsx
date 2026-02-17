@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { X, Users, Sparkles, Lock } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
-import { createProject } from '@/lib/db/queries'
+import { createProject, getUserSubscription } from '@/lib/db/queries'
 
 interface CreateProjectModalProps {
   isOpen: boolean
@@ -68,6 +68,16 @@ export default function CreateProjectModal({ isOpen, onClose, onProjectCreated }
 
       if (!user) {
         setError('Debes iniciar sesión para crear un proyecto.')
+        setIsCreating(false)
+        return
+      }
+
+      // Credit gate: redirect to subscription if insufficient credits
+      const sub = await getUserSubscription(supabase, user.id)
+      const creditsRemaining = sub ? Number(sub.credits_remaining) : 0
+      if (creditsRemaining < 5) {
+        onClose()
+        router.push('/app/subscription')
         setIsCreating(false)
         return
       }

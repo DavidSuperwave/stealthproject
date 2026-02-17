@@ -113,7 +113,24 @@ function UploadFlowPage() {
   // ── Redirect if no project ID ──────────────────────────
   useEffect(() => {
     if (!projectId) {
-      router.replace('/app?openCreate=1')
+      const checkCreditsAndRedirect = async () => {
+        try {
+          const supabase = createClient()
+          const { data: { user } } = await supabase.auth.getUser()
+          if (user) {
+            const sub = await getUserSubscription(supabase, user.id)
+            const remaining = sub ? Number(sub.credits_remaining) : 0
+            if (remaining < 5) {
+              router.replace('/app/subscription')
+              return
+            }
+          }
+        } catch {
+          // On error, fall through to default redirect
+        }
+        router.replace('/app?openCreate=1')
+      }
+      checkCreditsAndRedirect()
     }
   }, [projectId, router])
 

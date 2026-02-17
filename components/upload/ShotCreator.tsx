@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { Loader2, CheckCircle, XCircle, Film, Wand2, Music, CreditCard } from 'lucide-react'
+import { Loader2, CheckCircle, XCircle, Film, Wand2, Music, CreditCard, Sparkles, Cpu, Zap } from 'lucide-react'
 import { lipdubApi } from '@/lib/lipdub-api'
 import Link from 'next/link'
 
@@ -20,6 +20,23 @@ type CreationStep = 'creating_shot' | 'checking_shot' | 'checking_audio' | 'dedu
 const CREDITS_PER_MINUTE = 5
 const DEFAULT_VIDEO_MINUTES = 1
 
+// ~30 min total generation time
+const GENERATION_DURATION_MS = 30 * 60 * 1000
+
+// Rotating messages shown during generation
+const GENERATION_MESSAGES = [
+  'Analizando cuadros de video...',
+  'Mapeando puntos faciales del actor...',
+  'Sincronizando movimientos labiales con audio...',
+  'Aplicando modelo de IA propietario...',
+  'Renderizando cuadros de video...',
+  'Optimizando calidad de imagen...',
+  'Ajustando iluminación y texturas...',
+  'Combinando audio con video final...',
+  'Verificando sincronización labial...',
+  'Finalizando renderizado en alta calidad...',
+]
+
 export default function ShotCreator({ videoId, audioId, scriptText, projectId, initialShotId, onComplete, onError }: ShotCreatorProps) {
   const [step, setStep] = useState<CreationStep>('creating_shot')
   const [progress, setProgress] = useState(0)
@@ -29,13 +46,58 @@ export default function ShotCreator({ videoId, audioId, scriptText, projectId, i
   const [elapsedLabel, setElapsedLabel] = useState('')
   const [creditsDeducted, setCreditsDeducted] = useState(0)
   const [creditsInfo, setCreditsInfo] = useState<{ remaining: number; needed: number } | null>(null)
+  const [generationMessage, setGenerationMessage] = useState(GENERATION_MESSAGES[0])
+  const [displayProgress, setDisplayProgress] = useState(0)
   const startedRef = useRef(false)
+  const generationStartRef = useRef<number | null>(null)
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const messageTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   useEffect(() => {
     if (startedRef.current) return
     startedRef.current = true
     createShotAndGenerate()
   }, [])
+
+  // Time-based progress for the generation phase (~30 min)
+  useEffect(() => {
+    if (step === 'checking_generate') {
+      generationStartRef.current = Date.now()
+
+      // Update progress every 10 seconds
+      timerRef.current = setInterval(() => {
+        if (!generationStartRef.current) return
+        const elapsed = Date.now() - generationStartRef.current
+        const fraction = Math.min(elapsed / GENERATION_DURATION_MS, 1)
+        // Progress goes from 70 → 98 over 30 min (leaves room for snap to 100)
+        const newProgress = Math.round(70 + fraction * 28)
+        setDisplayProgress(newProgress)
+      }, 10_000)
+
+      // Rotate messages every 20 seconds
+      let msgIndex = 0
+      messageTimerRef.current = setInterval(() => {
+        msgIndex = (msgIndex + 1) % GENERATION_MESSAGES.length
+        setGenerationMessage(GENERATION_MESSAGES[msgIndex])
+      }, 20_000)
+
+      return () => {
+        if (timerRef.current) clearInterval(timerRef.current)
+        if (messageTimerRef.current) clearInterval(messageTimerRef.current)
+      }
+    } else if (step === 'complete') {
+      setDisplayProgress(100)
+      if (timerRef.current) clearInterval(timerRef.current)
+      if (messageTimerRef.current) clearInterval(messageTimerRef.current)
+    }
+  }, [step])
+
+  // Sync displayProgress with progress for non-generation steps
+  useEffect(() => {
+    if (step !== 'checking_generate' && step !== 'complete') {
+      setDisplayProgress(progress)
+    }
+  }, [progress, step])
 
   const createShotAndGenerate = async () => {
     let localShotId: number | null = null
@@ -44,14 +106,13 @@ export default function ShotCreator({ videoId, audioId, scriptText, projectId, i
     let attempts = 0
 
     try {
-      // Guard: audio_id is required for lip-sync generation
       if (!audioId) {
         throw new Error('Sube un archivo de audio para continuar. El guion de texto aún no está disponible.')
       }
 
       console.log('[ShotCreator] Starting with videoId:', videoId, 'audioId:', audioId, 'initialShotId:', initialShotId)
 
-      // Step 1: Get shot_id — use initialShotId if available, otherwise poll video status
+      // Step 1: Get shot_id
       setStep('creating_shot')
       setProgress(5)
 
@@ -80,7 +141,7 @@ export default function ShotCreator({ videoId, audioId, scriptText, projectId, i
 
           attempts++
           if (!videoReady) {
-            setElapsedLabel(`Revisando estado del video... (intento ${attempts}/${VIDEO_MAX_ATTEMPTS})`)
+            setElapsedLabel(`Procesando video maestro...`)
             await new Promise(r => setTimeout(r, VIDEO_POLL_INTERVAL))
             setProgress(prev => Math.min(prev + 1, 20))
           }
@@ -91,7 +152,7 @@ export default function ShotCreator({ videoId, audioId, scriptText, projectId, i
         }
       }
 
-      // Step 2: Poll shot status until AI training finishes (poll every 30s, up to 60 min)
+      // Step 2: Poll shot status until AI training finishes
       setStep('checking_shot')
       setProgress(25)
 
@@ -104,7 +165,6 @@ export default function ShotCreator({ videoId, audioId, scriptText, projectId, i
         const shotStatus = await lipdubApi.getShotStatus(localShotId)
         console.log('[ShotCreator] Shot status poll:', JSON.stringify(shotStatus))
 
-        // Accept 'finished' or 'completed' as ready states
         const isShotReady = ['finished', 'completed'].includes(shotStatus.shot_status)
         const isAiReady = ['finished', 'completed'].includes(shotStatus.ai_training_status)
 
@@ -117,7 +177,7 @@ export default function ShotCreator({ videoId, audioId, scriptText, projectId, i
 
         attempts++
         if (!shotReady) {
-          setElapsedLabel(`Entrenando modelo IA... (intento ${attempts}/${SHOT_MAX_ATTEMPTS}) — shot: ${shotStatus.shot_status}, ai: ${shotStatus.ai_training_status}`)
+          setElapsedLabel('Entrenando modelo de IA con tus movimientos faciales...')
           await new Promise(r => setTimeout(r, SHOT_POLL_INTERVAL))
           setProgress(prev => Math.min(prev + 1, 45))
         }
@@ -127,7 +187,7 @@ export default function ShotCreator({ videoId, audioId, scriptText, projectId, i
         throw new Error('Tiempo de espera agotado para el entrenamiento de IA')
       }
 
-      // Step 3: Verify audio is ready (should already be completed from previous step)
+      // Step 3: Verify audio is ready
       setStep('checking_audio')
       setProgress(50)
 
@@ -149,7 +209,7 @@ export default function ShotCreator({ videoId, audioId, scriptText, projectId, i
 
         attempts++
         if (!audioReady) {
-          setElapsedLabel(`Verificando audio... (intento ${attempts}/${AUDIO_MAX_ATTEMPTS})`)
+          setElapsedLabel('Procesando archivo de audio...')
           await new Promise(r => setTimeout(r, AUDIO_POLL_INTERVAL))
           setProgress(prev => Math.min(prev + 1, 60))
         }
@@ -159,7 +219,7 @@ export default function ShotCreator({ videoId, audioId, scriptText, projectId, i
         throw new Error('Tiempo de espera agotado para el procesamiento del audio')
       }
 
-      // Step 4: Deduct credits before generating
+      // Step 4: Deduct credits
       console.log('[ShotCreator] All checks passed — shot ready, audio ready. Proceeding to credit check...')
       setStep('deducting_credits')
       setProgress(62)
@@ -197,10 +257,9 @@ export default function ShotCreator({ videoId, audioId, scriptText, projectId, i
       setCreditsDeducted(creditsNeeded)
       setElapsedLabel('')
 
-      // Dispatch event so Layout/TopNav can refresh credits
       window.dispatchEvent(new Event('credits-updated'))
 
-      // Step 5: Generate video — POST /v1/shots/{shot_id}/generate
+      // Step 5: Generate video
       setStep('generating')
       setProgress(65)
       setElapsedLabel('')
@@ -214,7 +273,6 @@ export default function ShotCreator({ videoId, audioId, scriptText, projectId, i
           language: 'es-MX',
         })
       } catch (genErr) {
-        // Generation call failed — refund the credits
         await fetch('/api/credits/refund', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -232,7 +290,6 @@ export default function ShotCreator({ videoId, audioId, scriptText, projectId, i
       console.log('[ShotCreator] generate response:', JSON.stringify(generate))
 
       if (!generate || !generate.generate_id) {
-        // Refund if we didn't get a valid response
         await fetch('/api/credits/refund', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -251,7 +308,6 @@ export default function ShotCreator({ videoId, audioId, scriptText, projectId, i
       setGenerateId(localGenerateId)
 
       // Step 6: Poll generation status
-      // API status enum: "not_started" | "pending" | "running" | "finished" | "failed"
       setStep('checking_generate')
       setProgress(70)
 
@@ -273,12 +329,9 @@ export default function ShotCreator({ videoId, audioId, scriptText, projectId, i
             throw new Error('La generación del video falló')
           }
 
-          // "not_started", "pending", "running" → still in progress
           attempts++
           if (!generateComplete) {
-            setElapsedLabel(`Generando video final... (estado: ${genStatus.status}, intento ${attempts}/${GEN_MAX_ATTEMPTS})`)
             await new Promise(r => setTimeout(r, GEN_POLL_INTERVAL))
-            setProgress(prev => Math.min(prev + 1, 95))
           }
         } catch (err) {
           if (err instanceof Error && err.message === 'La generación del video falló') {
@@ -286,7 +339,6 @@ export default function ShotCreator({ videoId, audioId, scriptText, projectId, i
           }
           console.warn('[ShotCreator] Generation poll error:', err)
           attempts++
-          setElapsedLabel(`Esperando estado de generación... (intento ${attempts}/${GEN_MAX_ATTEMPTS})`)
           await new Promise(r => setTimeout(r, GEN_POLL_INTERVAL))
         }
       }
@@ -304,7 +356,6 @@ export default function ShotCreator({ videoId, audioId, scriptText, projectId, i
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Error desconocido'
 
-      // If credits were deducted but generation failed, refund them
       if (localCreditsDeducted > 0) {
         try {
           await fetch('/api/credits/refund', {
@@ -333,99 +384,128 @@ export default function ShotCreator({ videoId, audioId, scriptText, projectId, i
     switch (step) {
       case 'creating_shot':
         return {
-          icon: <Film className="w-8 h-8 text-accent animate-pulse" />,
-          title: 'Preparando Video',
-          description: 'Procesando tu video maestro en LipDub...',
+          icon: <Film className="w-10 h-10 text-accent animate-pulse" />,
+          title: 'Analizando Video Maestro',
+          description: 'Extrayendo cuadros y puntos de referencia facial de tu video...',
+          detail: 'Nuestro sistema está procesando cada cuadro de tu video para identificar los puntos faciales clave.',
         }
       case 'checking_shot':
         return {
-          icon: <Loader2 className="w-8 h-8 text-accent animate-spin" />,
-          title: 'Entrenando IA',
-          description: 'La IA está aprendiendo los movimientos faciales. Esto puede tomar varios minutos...',
+          icon: <Cpu className="w-10 h-10 text-accent animate-spin" />,
+          title: 'Entrenando Modelo de IA',
+          description: 'La IA está aprendiendo tus expresiones faciales y movimientos labiales...',
+          detail: 'Este paso crea un modelo personalizado basado en tu apariencia única. Puede tomar varios minutos.',
         }
       case 'checking_audio':
         return {
-          icon: <Music className="w-8 h-8 text-accent animate-pulse" />,
-          title: 'Verificando Audio',
-          description: 'Confirmando que tu audio está listo para la sincronización...',
+          icon: <Music className="w-10 h-10 text-accent animate-pulse" />,
+          title: 'Procesando Audio',
+          description: 'Analizando la estructura y fonética de tu audio personalizado...',
+          detail: 'Preparando los puntos de sincronización entre el audio y los movimientos labiales.',
         }
       case 'deducting_credits':
         return {
-          icon: <CreditCard className="w-8 h-8 text-accent animate-pulse" />,
+          icon: <CreditCard className="w-10 h-10 text-accent animate-pulse" />,
           title: 'Verificando Créditos',
-          description: 'Confirmando que tienes créditos suficientes...',
+          description: 'Confirmando que tienes créditos suficientes para la generación...',
+          detail: null,
         }
       case 'generating':
         return {
-          icon: <Wand2 className="w-8 h-8 text-accent animate-pulse" />,
+          icon: <Wand2 className="w-10 h-10 text-accent animate-pulse" />,
           title: 'Iniciando Generación',
-          description: 'Preparando sincronización labial con tu audio...',
+          description: 'Enviando tu proyecto al motor de renderizado de IA...',
+          detail: 'Preparando todos los recursos necesarios para la generación final.',
         }
       case 'checking_generate':
         return {
-          icon: <Loader2 className="w-8 h-8 text-accent animate-spin" />,
+          icon: <Sparkles className="w-10 h-10 text-accent animate-spin" />,
           title: 'Generando Video Final',
-          description: 'Combinando video maestro + audio personalizado. Esto puede tomar varios minutos...',
+          description: generationMessage,
+          detail: 'Este proceso toma aproximadamente 30 minutos. Puedes dejar esta página abierta.',
         }
       case 'complete':
         return {
-          icon: <CheckCircle className="w-8 h-8 text-green-400" />,
-          title: '¡Video Listo!',
+          icon: <CheckCircle className="w-10 h-10 text-green-400" />,
+          title: '¡Tu Video Está Listo!',
           description: 'Tu video con IA se ha generado exitosamente.',
+          detail: null,
         }
       case 'insufficient_credits':
         return {
-          icon: <CreditCard className="w-8 h-8 text-red-400" />,
+          icon: <CreditCard className="w-10 h-10 text-red-400" />,
           title: 'Créditos Insuficientes',
           description: error || 'No tienes suficientes créditos para generar este video.',
+          detail: null,
         }
       case 'error':
         return {
-          icon: <XCircle className="w-8 h-8 text-red-400" />,
-          title: 'Error',
-          description: error || 'Algo salió mal.',
+          icon: <XCircle className="w-10 h-10 text-red-400" />,
+          title: 'Error en la Generación',
+          description: error || 'Algo salió mal durante el proceso.',
+          detail: null,
         }
     }
   }
 
   const stepInfo = getStepInfo()
+  const shownProgress = displayProgress
+
+  // Format elapsed time for generation phase
+  const getElapsedTime = () => {
+    if (step !== 'checking_generate' || !generationStartRef.current) return null
+    const elapsed = Date.now() - generationStartRef.current
+    const mins = Math.floor(elapsed / 60_000)
+    const secs = Math.floor((elapsed % 60_000) / 1000)
+    return `${mins}:${secs.toString().padStart(2, '0')}`
+  }
 
   return (
-    <div className="w-full max-w-xl mx-auto">
-      <div className="bg-bg-secondary rounded-xl border border-border p-8 text-center">
-        {/* Icon */}
-        <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-accent/10 flex items-center justify-center">
-          {stepInfo.icon}
+    <div className="w-full">
+      <div className="bg-bg-secondary rounded-2xl border border-border p-8 sm:p-10">
+        {/* Top section: Icon + Title */}
+        <div className="text-center mb-8">
+          <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-accent/10 border border-accent/20 flex items-center justify-center">
+            {stepInfo.icon}
+          </div>
+          <h2 className="text-2xl font-bold text-white mb-2">{stepInfo.title}</h2>
+          <p className="text-text-secondary max-w-lg mx-auto">{stepInfo.description}</p>
+          {stepInfo.detail && (
+            <p className="text-xs text-text-muted mt-3 max-w-md mx-auto">{stepInfo.detail}</p>
+          )}
         </div>
 
-        {/* Title & Description */}
-        <h2 className="text-2xl font-semibold text-white mb-2">{stepInfo.title}</h2>
-        <p className="text-text-secondary mb-4">{stepInfo.description}</p>
-
-        {/* Elapsed / attempt label */}
-        {elapsedLabel && (
-          <p className="text-xs text-text-muted mb-4">{elapsedLabel}</p>
+        {/* Elapsed time for generation */}
+        {step === 'checking_generate' && (
+          <div className="text-center mb-6">
+            <p className="text-sm text-text-muted">
+              Tiempo transcurrido: <span className="text-white font-medium">{getElapsedTime() || '0:00'}</span>
+              <span className="text-text-muted ml-2">/ ~30:00 estimado</span>
+            </p>
+          </div>
         )}
 
         {/* Long-running notice */}
         {(step === 'checking_shot' || step === 'checking_generate') && (
-          <div className="mb-6 p-3 bg-accent/5 border border-accent/20 rounded-lg">
-            <p className="text-xs text-accent">
-              Este proceso puede tomar varios minutos. Puedes dejar esta página abierta — te notificaremos cuando esté listo.
+          <div className="mb-6 p-4 bg-accent/5 border border-accent/20 rounded-xl text-center">
+            <Zap className="w-5 h-5 text-accent mx-auto mb-2" />
+            <p className="text-sm text-accent font-medium">Procesando con IA</p>
+            <p className="text-xs text-text-muted mt-1">
+              Puedes dejar esta página abierta — te notificaremos cuando esté listo.
             </p>
           </div>
         )}
 
         {/* Insufficient credits CTA */}
         {step === 'insufficient_credits' && creditsInfo && (
-          <div className="mb-6 p-4 bg-red-500/10 border border-red-500/30 rounded-lg space-y-3">
+          <div className="mb-6 p-4 bg-red-500/10 border border-red-500/30 rounded-xl text-center space-y-3">
             <p className="text-sm text-red-300">
               Necesitas <span className="font-bold text-white">{creditsInfo.needed}</span> créditos pero solo tienes{' '}
               <span className="font-bold text-white">{creditsInfo.remaining.toFixed(2)}</span>.
             </p>
             <Link
               href="/app/subscription"
-              className="inline-flex items-center gap-2 px-4 py-2 bg-accent hover:bg-accent-hover text-white rounded-lg font-medium transition-colors text-sm"
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-accent hover:bg-accent-hover text-white rounded-lg font-medium transition-colors text-sm"
             >
               <CreditCard className="w-4 h-4" />
               Comprar más créditos
@@ -433,50 +513,56 @@ export default function ShotCreator({ videoId, audioId, scriptText, projectId, i
           </div>
         )}
 
-        {/* Progress */}
-        <div className="space-y-2">
+        {/* Progress bar */}
+        <div className="space-y-3">
           <div className="flex items-center justify-between text-sm">
-            <span className="text-text-secondary">Progreso</span>
-            <span className="text-white font-medium">{progress}%</span>
+            <span className="text-text-secondary">Progreso general</span>
+            <span className="text-white font-semibold">{shownProgress}%</span>
           </div>
-          
-          <div className="h-3 bg-bg-elevated rounded-full overflow-hidden">
-            <div 
-              className={`h-full transition-all duration-500 ${
-                step === 'error' ? 'bg-red-500' : step === 'complete' ? 'bg-green-500' : 'bg-accent'
+
+          <div className="h-4 bg-bg-elevated rounded-full overflow-hidden">
+            <div
+              className={`h-full rounded-full transition-all duration-1000 ease-out ${
+                step === 'error' ? 'bg-red-500' : step === 'complete' ? 'bg-green-500' : 'bg-gradient-to-r from-accent to-accent-secondary'
               }`}
-              style={{ width: `${progress}%` }}
+              style={{ width: `${shownProgress}%` }}
             />
           </div>
         </div>
 
-        {/* Status indicators */}
-        <div className="mt-8 grid grid-cols-5 gap-2">
+        {/* Step indicators */}
+        <div className="mt-8 grid grid-cols-5 gap-3">
           {[
-            { label: 'Video', complete: progress >= 20 },
-            { label: 'IA', complete: progress >= 45 },
-            { label: 'Audio', complete: progress >= 60 },
-            { label: 'Generación', complete: progress >= 70 },
-            { label: 'Listo', complete: progress >= 100 },
-          ].map((item) => (
-            <div key={item.label} className="text-center">
-              <div className={`
-                w-3 h-3 mx-auto rounded-full mb-1
-                ${item.complete ? 'bg-green-400' : 'bg-bg-elevated'}
-              `} />
-              <span className={`text-xs ${item.complete ? 'text-white' : 'text-text-muted'}`}>
-                {item.label}
-              </span>
-            </div>
-          ))}
-        </div>
-
-        {/* IDs display */}
-        <div className="mt-6 text-xs text-text-muted space-y-1">
-          {videoId && <p>Video: {videoId.slice(0, 8)}...{videoId.slice(-8)}</p>}
-          {shotId && <p>Shot: {shotId}</p>}
-          {audioId && <p>Audio: {audioId.slice(0, 8)}...{audioId.slice(-8)}</p>}
-          {generateId && <p>Generate: {generateId.slice(0, 8)}...</p>}
+            { label: 'Video', icon: Film, complete: shownProgress >= 20, active: step === 'creating_shot' },
+            { label: 'Modelo IA', icon: Cpu, complete: shownProgress >= 45, active: step === 'checking_shot' },
+            { label: 'Audio', icon: Music, complete: shownProgress >= 60, active: step === 'checking_audio' },
+            { label: 'Generación', icon: Sparkles, complete: shownProgress >= 95, active: step === 'generating' || step === 'checking_generate' },
+            { label: 'Listo', icon: CheckCircle, complete: shownProgress >= 100, active: step === 'complete' },
+          ].map((item) => {
+            const Icon = item.icon
+            return (
+              <div key={item.label} className="text-center">
+                <div className={`
+                  w-10 h-10 mx-auto rounded-full flex items-center justify-center mb-2 transition-all
+                  ${item.complete
+                    ? 'bg-green-500/20 border border-green-500/30'
+                    : item.active
+                      ? 'bg-accent/20 border border-accent/30'
+                      : 'bg-bg-elevated border border-border'
+                  }
+                `}>
+                  <Icon className={`w-4 h-4 ${
+                    item.complete ? 'text-green-400' : item.active ? 'text-accent' : 'text-text-muted'
+                  }`} />
+                </div>
+                <span className={`text-xs font-medium ${
+                  item.complete ? 'text-green-400' : item.active ? 'text-accent' : 'text-text-muted'
+                }`}>
+                  {item.label}
+                </span>
+              </div>
+            )
+          })}
         </div>
       </div>
     </div>

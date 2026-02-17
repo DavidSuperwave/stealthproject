@@ -6,7 +6,6 @@ import {
   CheckCircle2, 
   Users, 
   Building2, 
-  Mail, 
   Linkedin,
   ArrowRight,
   Video,
@@ -122,7 +121,26 @@ function UseCaseCard({
   )
 }
 
-// Video Placeholder Component
+// Video Player Component with Self-Hosted Video
+function VideoPlayer() {
+  return (
+    <div className="relative w-full aspect-video rounded-2xl overflow-hidden bg-[#0D0D0F] border border-[#2D2D35]">
+      <video
+        className="w-full h-full object-cover"
+        controls
+        preload="metadata"
+        playsInline
+      >
+        <source src="/videos/vsl.mp4" type="video/mp4" />
+        {/* Add more formats for better browser support */}
+        <source src="/videos/vsl.webm" type="video/webm" />
+        Tu navegador no soporta el elemento de video.
+      </video>
+    </div>
+  )
+}
+
+// Video Placeholder Component (fallback/loading state)
 function VideoPlaceholder() {
   return (
     <div className="relative w-full aspect-video rounded-2xl overflow-hidden bg-gradient-to-br from-[#1A1A1F] to-[#25252B] border border-[#2D2D35] group cursor-pointer">
@@ -155,7 +173,6 @@ function VideoPlaceholder() {
 
 export default function LandingPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  const [email, setEmail] = useState('')
 
   const navLinks = [
     { href: '#como-funciona', label: 'Cómo Funciona' },
@@ -223,7 +240,7 @@ export default function LandingPage() {
                 href="/signup"
                 className="px-4 py-2 rounded-lg bg-gradient-to-r from-[#E040FB] to-[#B027F7] text-white text-sm font-medium hover:opacity-90 transition-opacity"
               >
-                Comenzar Gratis
+                Regístrate Gratis
               </Link>
             </div>
 
@@ -262,7 +279,7 @@ export default function LandingPage() {
                   href="/signup"
                   className="block py-2 px-4 rounded-lg bg-gradient-to-r from-[#E040FB] to-[#B027F7] text-white text-center font-medium"
                 >
-                  Comenzar Gratis
+                  Regístrate Gratis
                 </Link>
               </div>
             </div>
@@ -288,7 +305,7 @@ export default function LandingPage() {
                   href="/signup"
                   className="px-8 py-4 rounded-xl bg-gradient-to-r from-[#E040FB] to-[#B027F7] text-white font-semibold hover:opacity-90 transition-all hover:scale-105 flex items-center justify-center gap-2"
                 >
-                  Comenzar Gratis
+                  Regístrate Gratis
                   <ArrowRight className="w-5 h-5" />
                 </Link>
                 <a
@@ -317,7 +334,7 @@ export default function LandingPage() {
             </div>
             
             <div className="relative">
-              <VideoPlaceholder />
+              <VideoPlayer />
               {/* Decorative elements */}
               <div className="absolute -top-4 -right-4 w-24 h-24 bg-[#E040FB]/20 rounded-full blur-2xl" />
               <div className="absolute -bottom-4 -left-4 w-32 h-32 bg-[#B027F7]/20 rounded-full blur-2xl" />
@@ -438,7 +455,7 @@ export default function LandingPage() {
             </div>
 
             <div className="lg:sticky lg:top-32">
-              <VideoPlaceholder />
+              <VideoPlayer />
               <div className="mt-6 p-6 rounded-xl bg-[#25252B] border border-[#2D2D35]">
                 <div className="flex items-center gap-3 mb-3">
                   <div className="w-10 h-10 rounded-full bg-[#E040FB]/20 flex items-center justify-center">
@@ -515,44 +532,14 @@ export default function LandingPage() {
               <p className="text-[#9CA3AF] text-lg mb-8 max-w-2xl mx-auto">
                 Únete a los creadores que ya están ahorrando horas de grabación mientras mantienen su presencia auténtica.
               </p>
-              
-              <form 
-                onSubmit={(e) => { e.preventDefault(); alert('¡Gracias por tu interés! Te contactaremos pronto.'); setEmail(''); }}
-                className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto mb-8"
-              >
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="tu@email.com"
-                  className="flex-1 px-4 py-3 rounded-xl bg-[#0D0D0F] border border-[#2D2D35] text-white placeholder-[#6B7280] focus:outline-none focus:border-[#E040FB] transition-colors"
-                  required
-                />
-                <button
-                  type="submit"
-                  className="px-6 py-3 rounded-xl bg-gradient-to-r from-[#E040FB] to-[#B027F7] text-white font-semibold hover:opacity-90 transition-opacity whitespace-nowrap"
-                >
-                  Unirse a la Lista
-                </button>
-              </form>
 
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                <Link
-                  href="/signup"
-                  className="px-8 py-3 rounded-xl bg-white text-[#0D0D0F] font-semibold hover:bg-gray-100 transition-colors flex items-center gap-2"
-                >
-                  Crear Cuenta Gratis
-                  <ArrowRight className="w-4 h-4" />
-                </Link>
-                <a
-                  href="#"
-                  onClick={(e) => { e.preventDefault(); alert('Demo próximamente disponible'); }}
-                  className="text-[#9CA3AF] hover:text-white transition-colors flex items-center gap-2"
-                >
-                  <Play className="w-4 h-4" />
-                  Ver Demo
-                </a>
-              </div>
+              <Link
+                href="/signup"
+                className="inline-flex items-center gap-2 px-10 py-4 rounded-xl bg-gradient-to-r from-[#E040FB] to-[#B027F7] text-white text-lg font-semibold hover:opacity-90 transition-all hover:scale-105"
+              >
+                Regístrate Gratis
+                <ArrowRight className="w-5 h-5" />
+              </Link>
             </div>
           </div>
         </div>

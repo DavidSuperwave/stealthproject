@@ -175,7 +175,7 @@ export default function AudioUploadEnhanced({ videoId, onComplete, onCancel }: A
   const statusDisplay = getStatusDisplay()
 
   return (
-    <div className="w-full max-w-2xl bg-bg-secondary rounded-xl border border-border">
+    <div className="w-full bg-bg-secondary rounded-xl border border-border">
       {/* Header */}
       <div className="flex items-center justify-between p-6 border-b border-border">
         <div>

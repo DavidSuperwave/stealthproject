@@ -3,11 +3,11 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Search, Plus, MoreVertical, Play, ArrowRight } from 'lucide-react'
+import { Search, Plus, MoreVertical, Play, ArrowRight, Download, CheckCircle } from 'lucide-react'
 import TutorialBanner from './TutorialBanner'
 import CreateProjectModal from './CreateProjectModal'
 import { createClient } from '@/lib/supabase/client'
-import { getProjects } from '@/lib/db/queries'
+import { getProjectsWithGeneration } from '@/lib/db/queries'
 
 interface Project {
   id: string
@@ -18,6 +18,9 @@ interface Project {
   sourceLanguage: string
   createdAt: string
   updatedAt: string
+  generationStatus: string | null
+  shotId: number | null
+  generateId: string | null
 }
 
 function formatDate(iso: string): string {
@@ -37,36 +40,43 @@ export default function ProjectsDashboard() {
   const [projects, setProjects] = useState<Project[]>([])
   const [userEmail, setUserEmail] = useState('')
   const [loading, setLoading] = useState(true)
+  const [downloadingId, setDownloadingId] = useState<string | null>(null)
 
   // Open create modal if redirected with ?openCreate=1, then clear param
   useEffect(() => {
     if (searchParams.get('openCreate') === '1') {
       setIsCreateModalOpen(true)
-      router.replace('/', { scroll: false })
+      router.replace('/app', { scroll: false })
     }
   }, [searchParams, router])
 
-  useEffect(() => {
+  const loadProjects = async () => {
     const supabase = createClient()
-    supabase.auth.getUser().then(async ({ data: { user } }) => {
-      if (!user) {
-        setLoading(false)
-        return
-      }
-      setUserEmail(user.email ?? '')
-      const rows = await getProjects(supabase, user.id)
-      setProjects(rows.map((r) => ({
-        id: r.id,
-        name: r.name,
-        type: r.type,
-        status: r.status,
-        createdBy: user.email ?? '',
-        sourceLanguage: r.source_language,
-        createdAt: formatDate(r.created_at),
-        updatedAt: formatDate(r.updated_at),
-      })))
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
       setLoading(false)
-    })
+      return
+    }
+    setUserEmail(user.email ?? '')
+    const rows = await getProjectsWithGeneration(supabase, user.id)
+    setProjects(rows.map((r) => ({
+      id: r.id,
+      name: r.name,
+      type: r.type,
+      status: r.status,
+      createdBy: user.email ?? '',
+      sourceLanguage: r.source_language,
+      createdAt: formatDate(r.created_at),
+      updatedAt: formatDate(r.updated_at),
+      generationStatus: r.generation_status,
+      shotId: r.shot_id,
+      generateId: r.generate_id,
+    })))
+    setLoading(false)
+  }
+
+  useEffect(() => {
+    loadProjects()
   }, [])
 
   const filteredProjects = projects.filter((p) =>
@@ -74,21 +84,23 @@ export default function ProjectsDashboard() {
   )
 
   const handleProjectCreated = () => {
-    const supabase = createClient()
-    supabase.auth.getUser().then(async ({ data: { user } }) => {
-      if (!user) return
-      const rows = await getProjects(supabase, user.id)
-      setProjects(rows.map((r) => ({
-        id: r.id,
-        name: r.name,
-        type: r.type,
-        status: r.status,
-        createdBy: user.email ?? '',
-        sourceLanguage: r.source_language,
-        createdAt: formatDate(r.created_at),
-        updatedAt: formatDate(r.updated_at),
-      })))
-    })
+    loadProjects()
+  }
+
+  const isProjectComplete = (project: Project) => {
+    return (
+      project.status === 'completed' ||
+      project.generationStatus === 'completed'
+    ) && project.shotId && project.generateId
+  }
+
+  const handleDownload = async (project: Project) => {
+    setDownloadingId(project.id)
+    try {
+      window.open(`/api/projects/${project.id}/download`, '_blank')
+    } finally {
+      setTimeout(() => setDownloadingId(null), 2000)
+    }
   }
 
   return (
@@ -136,40 +148,68 @@ export default function ProjectsDashboard() {
             </tr>
           </thead>
           <tbody>
-            {filteredProjects.map((project) => (
-              <tr key={project.id} className="border-b border-border last:border-b-0 hover:bg-bg-elevated/50 transition-colors">
-                <td className="px-6 py-4">
-                  <Link href={`/app/upload?project=${project.id}`} className="flex items-center gap-3 group">
-                    <div className="w-10 h-10 rounded bg-bg-elevated flex items-center justify-center">
-                      <Play className="w-4 h-4 text-accent" />
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium text-white group-hover:text-accent transition-colors">{project.name}</span>
-                      {project.status === 'draft' && (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-accent/10 text-accent border border-accent/30">
-                          <ArrowRight className="w-3 h-3" />
-                          Continuar
-                        </span>
+            {filteredProjects.map((project) => {
+              const completed = isProjectComplete(project)
+
+              return (
+                <tr key={project.id} className="border-b border-border last:border-b-0 hover:bg-bg-elevated/50 transition-colors">
+                  <td className="px-6 py-4">
+                    <Link href={`/app/upload?project=${project.id}`} className="flex items-center gap-3 group">
+                      <div className="w-10 h-10 rounded bg-bg-elevated flex items-center justify-center">
+                        <Play className="w-4 h-4 text-accent" />
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-white group-hover:text-accent transition-colors">{project.name}</span>
+                        {completed ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-500/10 text-green-400 border border-green-500/30">
+                            <CheckCircle className="w-3 h-3" />
+                            Activo
+                          </span>
+                        ) : project.status === 'draft' ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-accent/10 text-accent border border-accent/30">
+                            <ArrowRight className="w-3 h-3" />
+                            Continuar
+                          </span>
+                        ) : project.status === 'processing' ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-500/10 text-yellow-400 border border-yellow-500/30">
+                            Procesando
+                          </span>
+                        ) : null}
+                      </div>
+                    </Link>
+                  </td>
+                  <td className="px-6 py-4">
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-bg-elevated text-text-secondary">
+                      {project.type === 'personalization' ? 'Un Actor' : 'Traducción'}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 text-text-secondary">{project.createdBy}</td>
+                  <td className="px-6 py-4 text-text-secondary">{project.sourceLanguage}</td>
+                  <td className="px-6 py-4 text-text-secondary">{project.createdAt}</td>
+                  <td className="px-6 py-4 text-text-secondary">{project.updatedAt}</td>
+                  <td className="px-6 py-4 text-right">
+                    <div className="flex items-center justify-end gap-2">
+                      {completed && (
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault()
+                            handleDownload(project)
+                          }}
+                          disabled={downloadingId === project.id}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-green-600 hover:bg-green-500 disabled:opacity-50 text-white text-xs font-medium transition-colors"
+                        >
+                          <Download className="w-3.5 h-3.5" />
+                          Descargar
+                        </button>
                       )}
+                      <button className="p-2 hover:bg-bg-elevated rounded-lg transition-colors">
+                        <MoreVertical className="w-4 h-4 text-text-muted" />
+                      </button>
                     </div>
-                  </Link>
-                </td>
-                <td className="px-6 py-4">
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-bg-elevated text-text-secondary">
-                    {project.type === 'personalization' ? 'Un Actor' : 'Traducción'}
-                  </span>
-                </td>
-                <td className="px-6 py-4 text-text-secondary">{project.createdBy}</td>
-                <td className="px-6 py-4 text-text-secondary">{project.sourceLanguage}</td>
-                <td className="px-6 py-4 text-text-secondary">{project.createdAt}</td>
-                <td className="px-6 py-4 text-text-secondary">{project.updatedAt}</td>
-                <td className="px-6 py-4 text-right">
-                  <button className="p-2 hover:bg-bg-elevated rounded-lg transition-colors">
-                    <MoreVertical className="w-4 h-4 text-text-muted" />
-                  </button>
-                </td>
-              </tr>
-            ))}
+                  </td>
+                </tr>
+              )
+            })}
           </tbody>
         </table>
         )}
