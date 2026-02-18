@@ -200,8 +200,11 @@ class LipDubAPI {
   /**
    * Upload video via Supabase Storage (bypasses Vercel 4.5MB limit)
    * 
-   * 1. Uploads file to Supabase Storage (direct from browser)
-   * 2. Sends Supabase URL to LipDub via /api/video-upload
+   * Flow:
+   * 1. Create video in LipDub first (get video_id, success_url, failure_url, upload_url)
+   * 2. Upload file directly to Supabase Storage from browser
+   * 3. Server streams from Supabase to LipDub GCS URL (/api/video-transfer)
+   * 4. Returns LipDub response
    * 
    * Use this for files > 4.5MB instead of uploadFileToUrl
    */
@@ -210,41 +213,81 @@ class LipDubAPI {
     projectName: string,
     onProgress?: (percentage: number) => void
   ): Promise<VideoUploadResponse> {
-    // Step 1: Upload to Supabase Storage
-    onProgress?.(10);
+    onProgress?.(5);
     
-    const formData = new FormData();
-    formData.append('file', file);
+    // Step 1: Create video in LipDub first to get metadata
+    const lipdubCreate = await this.initiateVideoUpload({
+      file_name: file.name,
+      content_type: file.type,
+      project_name: projectName,
+      scene_name: 'Scene 1',
+      actor_name: 'Actor',
+    });
 
-    const uploadRes = await fetch('/api/video-upload', {
+    console.log('[LipDub] Created video:', lipdubCreate.video_id);
+    onProgress?.(15);
+    
+    // Step 2: Upload directly to Supabase Storage (bypasses Vercel limit)
+    const { createClient } = await import('@/lib/supabase/client');
+    const supabase = createClient();
+    
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      throw new Error("User not authenticated");
+    }
+
+    const timestamp = Date.now();
+    const sanitizedName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+    const filePath = `${user.id}/${timestamp}-${sanitizedName}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('videos')
+      .upload(filePath, file, {
+        cacheControl: '3600',
+        upsert: false,
+      });
+
+    if (uploadError) {
+      throw new Error(`Supabase upload failed: ${uploadError.message}`);
+    }
+
+    // Get public URL
+    const { data: { publicUrl } } = supabase.storage
+      .from('videos')
+      .getPublicUrl(filePath);
+
+    console.log('[Supabase] Uploaded to:', publicUrl);
+    onProgress?.(40);
+
+    // Step 3: Server streams from Supabase to LipDub GCS
+    console.log('[Transfer] Starting server-side transfer...');
+    const transferRes = await fetch('/api/video-transfer', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        videoUrl: 'pending', // Will be replaced by server after Supabase upload
-        projectName,
-        fileName: file.name,
-        contentType: file.type,
+        supabaseUrl: publicUrl,
+        lipdubUploadUrl: lipdubCreate.upload_url,
+        videoId: lipdubCreate.video_id,
+        successUrl: lipdubCreate.success_url,
+        failureUrl: lipdubCreate.failure_url,
       }),
     });
 
-    if (!uploadRes.ok) {
-      const error = await uploadRes.text();
-      throw new Error(`Supabase upload failed: ${error}`);
+    if (!transferRes.ok) {
+      const error = await transferRes.text();
+      throw new Error(`Transfer failed: ${error}`);
     }
 
-    const data = await uploadRes.json();
+    const transferData = await transferRes.json();
+    console.log('[Transfer] Complete:', transferData);
     onProgress?.(100);
 
+    // Return the original LipDub response with Supabase URL for reference
     return {
-      project_id: data.project_id || 0,
-      scene_id: data.scene_id || 0,
-      actor_id: data.actor_id || 0,
-      video_id: data.videoId,
-      upload_url: data.url,
-      success_url: data.success_url || '',
-      failure_url: data.failure_url || '',
+      ...lipdubCreate,
+      upload_url: publicUrl, // Keep Supabase URL for reference
     };
   }
 
