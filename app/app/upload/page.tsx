@@ -286,19 +286,35 @@ function UploadFlowPage() {
     setUploadError(null)
 
     try {
-      const upload = await lipdubApi.initiateVideoUpload({
-        file_name: file.name,
-        content_type: file.type,
-        project_name: projectName,
-        scene_name: 'Scene 1',
-        actor_name: 'Actor',
-      })
+      // Use Supabase upload for files > 4MB to bypass Vercel limit
+      const LARGE_FILE_THRESHOLD = 4 * 1024 * 1024; // 4MB
+      let upload: VideoUploadResponse;
+
+      if (file.size > LARGE_FILE_THRESHOLD) {
+        // Use Supabase Storage (bypasses 4.5MB Vercel limit)
+        upload = await lipdubApi.uploadViaSupabase(
+          file,
+          projectName,
+          (progress) => setUploadProgress(Math.min(10 + progress * 0.6, 70))
+        );
+      } else {
+        // Use original flow for small files
+        upload = await lipdubApi.initiateVideoUpload({
+          file_name: file.name,
+          content_type: file.type,
+          project_name: projectName,
+          scene_name: 'Scene 1',
+          actor_name: 'Actor',
+        })
+
+        setState(prev => ({ ...prev, videoUpload: upload, videoFile: file }))
+        setUploadProgress(30)
+
+        await lipdubApi.uploadFileToUrl(upload.upload_url, file)
+      }
 
       setState(prev => ({ ...prev, videoUpload: upload, videoFile: file }))
-      setUploadProgress(30)
-
-      await lipdubApi.uploadFileToUrl(upload.upload_url, file)
-      setUploadProgress(50)
+      setUploadProgress(70)
 
       // Call success callback — captures shot_id if returned
       let shotIdFromCallback: number | null = null

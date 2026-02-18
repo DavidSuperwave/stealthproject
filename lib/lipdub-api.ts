@@ -142,7 +142,10 @@ class LipDubAPI {
     return data.data ?? data;
   }
 
-  // Upload file to signed URL - tries direct first (for large files), falls back to proxy
+  /**
+   * Upload file to signed URL - tries direct first (for large files), falls back to proxy
+   * ⚠️ DEPRECATED: For files > 4.5MB, use uploadViaSupabase instead to avoid Vercel limits
+   */
   async uploadFileToUrl(uploadUrl: string, file: File): Promise<void> {
     // For files > 3MB, try direct upload to avoid Vercel payload limits
     // Vercel Hobby = 4.5MB limit, Pro = 100MB limit
@@ -192,6 +195,57 @@ class LipDubAPI {
       const errorData = await res.text();
       throw new Error(`Upload failed: ${res.status} — ${errorData}`);
     }
+  }
+
+  /**
+   * Upload video via Supabase Storage (bypasses Vercel 4.5MB limit)
+   * 
+   * 1. Uploads file to Supabase Storage (direct from browser)
+   * 2. Sends Supabase URL to LipDub via /api/video-upload
+   * 
+   * Use this for files > 4.5MB instead of uploadFileToUrl
+   */
+  async uploadViaSupabase(
+    file: File,
+    projectName: string,
+    onProgress?: (percentage: number) => void
+  ): Promise<VideoUploadResponse> {
+    // Step 1: Upload to Supabase Storage
+    onProgress?.(10);
+    
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const uploadRes = await fetch('/api/video-upload', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        videoUrl: 'pending', // Will be replaced by server after Supabase upload
+        projectName,
+        fileName: file.name,
+        contentType: file.type,
+      }),
+    });
+
+    if (!uploadRes.ok) {
+      const error = await uploadRes.text();
+      throw new Error(`Supabase upload failed: ${error}`);
+    }
+
+    const data = await uploadRes.json();
+    onProgress?.(100);
+
+    return {
+      project_id: data.project_id || 0,
+      scene_id: data.scene_id || 0,
+      actor_id: data.actor_id || 0,
+      video_id: data.videoId,
+      upload_url: data.url,
+      success_url: data.success_url || '',
+      failure_url: data.failure_url || '',
+    };
   }
 
   // Notify upload success (callback URL routed through proxy)
