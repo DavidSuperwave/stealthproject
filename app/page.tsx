@@ -121,8 +121,24 @@ function UseCaseCard({
   )
 }
 
-// Video Player Component with Tella.tv Embed
+// Video Player Component with Vimeo Embed (Hero)
 function VideoPlayer() {
+  return (
+    <div className="relative w-full aspect-video rounded-2xl overflow-hidden bg-[#0D0D0F] border border-[#2D2D35]">
+      <iframe
+        src="https://player.vimeo.com/video/1165562311?h=fa0dedf19f&title=0&byline=0&portrait=0&badge=0&autopause=0&player_id=0&app_id=58479"
+        className="absolute top-0 left-0 w-full h-full"
+        frameBorder="0"
+        allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media"
+        title="DobleLabs VSL"
+      />
+      <script src="https://player.vimeo.com/api/player.js" />
+    </div>
+  )
+}
+
+// Feature Video Player Component with Tella.tv Embed
+function FeatureVideoPlayer() {
   return (
     <div className="relative w-full aspect-video rounded-2xl overflow-hidden bg-[#0D0D0F] border border-[#2D2D35]">
       <iframe
@@ -451,7 +467,7 @@ export default function LandingPage() {
             </div>
 
             <div className="lg:sticky lg:top-32">
-              <VideoPlayer />
+              <FeatureVideoPlayer />
               <div className="mt-6 p-6 rounded-xl bg-[#25252B] border border-[#2D2D35]">
                 <div className="flex items-center gap-3 mb-3">
                   <div className="w-10 h-10 rounded-full bg-[#E040FB]/20 flex items-center justify-center">
