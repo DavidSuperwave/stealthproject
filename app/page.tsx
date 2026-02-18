@@ -142,9 +142,10 @@ function FeatureVideoPlayer() {
   return (
     <div className="relative w-full aspect-video rounded-2xl overflow-hidden bg-[#0D0D0F] border border-[#2D2D35]">
       <iframe
-        src="https://www.tella.tv/video/como-funciona-doblelabs-61vt/embed"
+        src="https://www.tella.tv/video/como-funciona-doblelabs-61vt/embed?cover=1&hd=1"
         className="absolute top-0 left-0 w-full h-full"
         frameBorder="0"
+        scrolling="no"
         allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media"
         title="Cómo Funciona DobleLabs"
       />
