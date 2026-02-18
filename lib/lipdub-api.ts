@@ -310,6 +310,94 @@ class LipDubAPI {
     return data.data ?? data;
   }
 
+  /**
+   * Upload audio via Supabase Storage (bypasses Vercel 4.5MB limit)
+   * 
+   * Same flow as video upload:
+   * 1. Create audio in LipDub first
+   * 2. Upload to Supabase Storage
+   * 3. Server streams to LipDub GCS
+   */
+  async uploadAudioViaSupabase(
+    file: File,
+    onProgress?: (percentage: number) => void
+  ): Promise<AudioUploadResponse> {
+    onProgress?.(5);
+
+    // Normalize content type
+    let contentType = file.type;
+    if (contentType === 'audio/mp3') contentType = 'audio/mpeg';
+    if (!contentType || !contentType.startsWith('audio/')) contentType = 'audio/mpeg';
+
+    // Step 1: Create audio in LipDub
+    const lipdubCreate = await this.initiateAudioUpload({
+      file_name: file.name,
+      content_type: contentType,
+      size_bytes: file.size,
+    });
+
+    console.log('[LipDub] Created audio:', lipdubCreate.audio_id);
+    onProgress?.(15);
+
+    // Step 2: Upload to Supabase Storage
+    const { createClient } = await import('@/lib/supabase/client');
+    const supabase = createClient();
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      throw new Error("User not authenticated");
+    }
+
+    const timestamp = Date.now();
+    const sanitizedName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+    const filePath = `${user.id}/audio/${timestamp}-${sanitizedName}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('videos') // Use same bucket or create 'audio' bucket
+      .upload(filePath, file, {
+        cacheControl: '3600',
+        upsert: false,
+      });
+
+    if (uploadError) {
+      throw new Error(`Supabase upload failed: ${uploadError.message}`);
+    }
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('videos')
+      .getPublicUrl(filePath);
+
+    console.log('[Supabase] Audio uploaded to:', publicUrl);
+    onProgress?.(40);
+
+    // Step 3: Server streams from Supabase to LipDub GCS
+    console.log('[Transfer] Starting audio transfer...');
+    const transferRes = await fetch('/api/video-transfer', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        supabaseUrl: publicUrl,
+        lipdubUploadUrl: lipdubCreate.upload_url,
+        videoId: lipdubCreate.audio_id, // Using audio_id as videoId for compatibility
+        successUrl: lipdubCreate.success_url,
+        failureUrl: lipdubCreate.failure_url,
+      }),
+    });
+
+    if (!transferRes.ok) {
+      const error = await transferRes.text();
+      throw new Error(`Transfer failed: ${error}`);
+    }
+
+    const transferData = await transferRes.json();
+    console.log('[Transfer] Audio transfer complete:', transferData);
+    onProgress?.(100);
+
+    return lipdubCreate;
+  }
+
   // Audio Upload
   async initiateAudioUpload(params: {
     file_name: string;

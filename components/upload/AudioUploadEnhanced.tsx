@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { Upload, X, Music, FileText, Loader2, CheckCircle, Lock } from 'lucide-react'
-import { lipdubApi } from '@/lib/lipdub-api'
+import { lipdubApi, type AudioUploadResponse } from '@/lib/lipdub-api'
 
 interface AudioUploadEnhancedProps {
   videoId: string
@@ -75,27 +75,42 @@ export default function AudioUploadEnhanced({ videoId, onComplete, onCancel }: A
         size_bytes: selectedFile.size,
       })
 
-      // Step 1: Initiate upload with LipDub
-      const upload = await lipdubApi.initiateAudioUpload({
-        file_name: selectedFile.name,
-        content_type: contentType,
-        size_bytes: selectedFile.size,
-      })
+      // Use Supabase for large files (>4MB) to bypass Vercel limit
+      const LARGE_FILE_THRESHOLD = 4 * 1024 * 1024; // 4MB
+      let upload: AudioUploadResponse;
 
-      console.log('[Audio] Initiate response:', JSON.stringify(upload))
+      if (selectedFile.size > LARGE_FILE_THRESHOLD) {
+        console.log('[Audio] Using Supabase for large file...')
+        upload = await lipdubApi.uploadAudioViaSupabase(
+          selectedFile,
+          (progress) => setProgress(Math.min(10 + progress * 0.6, 70))
+        )
+      } else {
+        // Step 1: Initiate upload with LipDub
+        upload = await lipdubApi.initiateAudioUpload({
+          file_name: selectedFile.name,
+          content_type: contentType,
+          size_bytes: selectedFile.size,
+        })
 
-      if (!upload.audio_id || !upload.upload_url) {
-        throw new Error('LipDub no devolvió audio_id o upload_url válidos')
+        console.log('[Audio] Initiate response:', JSON.stringify(upload))
+
+        if (!upload.audio_id || !upload.upload_url) {
+          throw new Error('LipDub no devolvió audio_id o upload_url válidos')
+        }
+
+        setAudioId(upload.audio_id)
+        setStatus('uploading')
+        setProgress(30)
+
+        // Step 2: Upload to signed URL
+        console.log('[Audio] Uploading file to signed URL...')
+        await lipdubApi.uploadFileToUrl(upload.upload_url, selectedFile)
+        console.log('[Audio] File uploaded successfully')
       }
 
       setAudioId(upload.audio_id)
       setStatus('uploading')
-      setProgress(30)
-
-      // Step 2: Upload to signed URL
-      console.log('[Audio] Uploading file to signed URL...')
-      await lipdubApi.uploadFileToUrl(upload.upload_url, selectedFile)
-      console.log('[Audio] File uploaded successfully')
       setProgress(60)
 
       // Step 3: Notify success
