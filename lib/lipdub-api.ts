@@ -142,8 +142,43 @@ class LipDubAPI {
     return data.data ?? data;
   }
 
-  // Upload file to signed URL via server-side proxy (GCS blocks browser CORS)
+  // Upload file to signed URL - tries direct first (for large files), falls back to proxy
   async uploadFileToUrl(uploadUrl: string, file: File): Promise<void> {
+    // For files > 3MB, try direct upload to avoid Vercel payload limits
+    // Vercel Hobby = 4.5MB limit, Pro = 100MB limit
+    // Direct upload works in production if GCS CORS is configured, fails in dev (localhost)
+    const LARGE_FILE_THRESHOLD = 3 * 1024 * 1024; // 3MB - below Vercel Hobby limit
+    const isLargeFile = file.size > LARGE_FILE_THRESHOLD;
+
+    if (isLargeFile) {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+        const res = await fetch(uploadUrl, {
+          method: 'PUT',
+          body: file,
+          headers: {
+            'Content-Type': file.type,
+          },
+          signal: controller.signal,
+        });
+
+        clearTimeout(timeoutId);
+
+        if (res.ok) {
+          console.log('[LipDub] Large file uploaded directly to GCS (bypassing proxy)');
+          return;
+        }
+        // If direct upload fails with non-OK, fall through to proxy
+        console.warn('[LipDub] Direct upload failed, falling back to proxy:', res.status);
+      } catch (err) {
+        // CORS error or network failure - fall through to proxy
+        console.warn('[LipDub] Direct upload error (likely CORS), falling back to proxy:', err);
+      }
+    }
+
+    // Proxy upload for smaller files or when direct fails
     const proxyUrl = `/api/proxy-upload?url=${encodeURIComponent(uploadUrl)}`;
     const res = await fetch(proxyUrl, {
       method: 'PUT',
