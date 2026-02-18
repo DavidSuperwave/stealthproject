@@ -67,7 +67,6 @@ export function useVideoUpload(options: UseVideoUploadOptions = {}) {
 
       setIsUploading(true);
       setError(null);
-      setProgress({ loaded: 0, total: file.size, percentage: 0 });
 
       try {
         // Get current user
@@ -81,26 +80,35 @@ export function useVideoUpload(options: UseVideoUploadOptions = {}) {
         const sanitizedName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
         const filePath = `${user.id}/${timestamp}-${sanitizedName}`;
 
-        // Upload with progress tracking
+        // Simulate progress (Supabase doesn't support onUploadProgress)
+        const progressInterval = setInterval(() => {
+          setProgress(prev => {
+            const current = prev?.percentage || 0;
+            // Increment up to 90%, then wait for actual completion
+            const next = current < 90 ? current + 5 : current;
+            const progressData = { loaded: 0, total: file.size, percentage: next };
+            options.onProgress?.(progressData);
+            return progressData;
+          });
+        }, 500);
+
+        // Upload to Supabase Storage
         const { data, error: uploadError } = await supabase.storage
           .from('videos')
           .upload(filePath, file, {
             cacheControl: '3600',
             upsert: false,
-            onUploadProgress: (event) => {
-              const loaded = event.loaded;
-              const total = event.total || file.size;
-              const percentage = Math.round((loaded / total) * 100);
-              
-              const progressData = { loaded, total, percentage };
-              setProgress(progressData);
-              options.onProgress?.(progressData);
-            },
           });
+
+        clearInterval(progressInterval);
 
         if (uploadError) {
           throw new Error(`Upload failed: ${uploadError.message}`);
         }
+
+        // Set to 100% on completion
+        setProgress({ loaded: file.size, total: file.size, percentage: 100 });
+        options.onProgress?.({ loaded: file.size, total: file.size, percentage: 100 });
 
         // Get public URL
         const { data: { publicUrl } } = supabase.storage
