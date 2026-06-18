@@ -76,9 +76,9 @@ export default function AudioUpload({
   const getDescription = () => {
     switch (activeTab) {
       case 'translate':
-        return 'Automatically translate your video to a different language with AI lip-sync'
+        return 'Traduce tu video automáticamente a otro idioma'
       case 'audio':
-        return 'Upload an audio file to LipDub in your target language'
+        return 'Sube un archivo de audio en el idioma objetivo'
       case 'dialogue':
         return 'Replace the dialogue in your video with new text'
       case 'srt':

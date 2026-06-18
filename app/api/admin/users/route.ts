@@ -29,7 +29,7 @@ export async function GET() {
   // Get all profiles
   const { data: profiles } = await supabaseAdmin
     .from('profiles')
-    .select('id, full_name, avatar_url, created_at')
+    .select('id, full_name, avatar_url, created_at, onboarding_completed, creator_type, business_type, primary_use_case, target_audience, content_channels, monthly_video_volume, interested_services, onboarding_goals')
 
   // Get all subscriptions
   const { data: subscriptions } = await supabaseAdmin
@@ -51,6 +51,15 @@ export async function GET() {
       id: u.id,
       email: u.email ?? '',
       full_name: profile?.full_name ?? null,
+      onboarding_completed: profile?.onboarding_completed ?? false,
+      creator_type: profile?.creator_type ?? null,
+      business_type: profile?.business_type ?? null,
+      primary_use_case: profile?.primary_use_case ?? null,
+      target_audience: profile?.target_audience ?? null,
+      content_channels: profile?.content_channels ?? [],
+      monthly_video_volume: profile?.monthly_video_volume ?? null,
+      interested_services: profile?.interested_services ?? [],
+      onboarding_goals: profile?.onboarding_goals ?? null,
       created_at: u.created_at,
       credits_remaining: sub ? Number(sub.credits_remaining) : 0,
       banned: u.banned_until ? new Date(u.banned_until) > new Date() : false,

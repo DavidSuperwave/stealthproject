@@ -1,6 +1,7 @@
 'use client'
 
 import { Play, Trash2, FileVideo } from 'lucide-react'
+import { uploadCardPadded } from './uploadStyles'
 
 interface VideoPreviewProps {
   filename: string
@@ -20,10 +21,10 @@ export default function VideoPreview({
   onPlay
 }: VideoPreviewProps) {
   return (
-    <div className="bg-bg-secondary rounded-xl border border-border p-6">
-      <div className="flex gap-6">
+    <div className={uploadCardPadded}>
+      <div className="flex flex-col gap-6 md:flex-row">
         {/* Thumbnail */}
-        <div className="relative w-64 aspect-video rounded-lg overflow-hidden bg-black flex-shrink-0">
+        <div className="relative w-full overflow-hidden rounded-[24px] bg-black md:w-72 md:flex-shrink-0" style={{ aspectRatio: '16 / 9' }}>
           {thumbnailUrl ? (
             <img 
               src={thumbnailUrl} 
@@ -31,7 +32,7 @@ export default function VideoPreview({
               className="w-full h-full object-cover"
             />
           ) : (
-            <div className="w-full h-full flex items-center justify-center bg-bg-elevated">
+            <div className="w-full h-full flex items-center justify-center bg-bg-elevated/80">
               <FileVideo className="w-12 h-12 text-text-muted" />
             </div>
           )}
@@ -41,27 +42,27 @@ export default function VideoPreview({
             onClick={onPlay}
             className="absolute inset-0 flex items-center justify-center bg-black/40 hover:bg-black/50 transition-colors group"
           >
-            <div className="w-14 h-14 rounded-full bg-white/20 backdrop-blur flex items-center justify-center group-hover:bg-white/30 transition-colors">
+            <div className="w-14 h-14 rounded-full bg-white/25 backdrop-blur flex items-center justify-center group-hover:bg-white/35 transition-colors">
               <Play className="w-6 h-6 text-white ml-1" />
             </div>
           </button>
         </div>
 
         {/* Info */}
-        <div className="flex-1 space-y-4">
+        <div className="grid flex-1 gap-3 sm:grid-cols-3 md:grid-cols-1">
           <div>
-            <p className="text-sm text-text-secondary mb-1">Filename:</p>
-            <p className="text-white font-medium">{filename}</p>
+            <p className="text-sm text-text-secondary mb-1">Filename</p>
+            <p className="font-semibold text-text-primary">{filename}</p>
           </div>
 
           <div>
-            <p className="text-sm text-text-secondary mb-1">Duration:</p>
-            <p className="text-white">{duration}</p>
+            <p className="text-sm text-text-secondary mb-1">Duration</p>
+            <p className="text-text-primary">{duration}</p>
           </div>
 
           <div>
-            <p className="text-sm text-text-secondary mb-1">Size:</p>
-            <p className="text-white">{size}</p>
+            <p className="text-sm text-text-secondary mb-1">Size</p>
+            <p className="text-text-primary">{size}</p>
           </div>
         </div>
 
@@ -69,10 +70,10 @@ export default function VideoPreview({
         <div className="flex flex-col gap-2">
           <button 
             onClick={onDelete}
-            className="p-2 hover:bg-red-500/20 rounded-lg transition-colors"
+            className="rounded-full border border-red-200 bg-red-50 p-2 text-red-700 transition-colors hover:bg-red-100"
             title="Delete video"
           >
-            <Trash2 className="w-5 h-5 text-red-400" />
+            <Trash2 className="w-5 h-5" />
           </button>
         </div>
       </div>

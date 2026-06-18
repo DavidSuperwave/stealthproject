@@ -4,6 +4,7 @@ import { lipdubServer } from '@/lib/lipdub-server'
 import { sendCompletionEmail, sendFailureEmail } from '@/lib/email'
 
 const CRON_SECRET = process.env.CRON_SECRET || ''
+const MOCK_DURATION_MS = 45_000
 
 function getSupabaseAdmin() {
   return createClient(
@@ -56,12 +57,50 @@ export async function GET(req: NextRequest) {
     let failed = 0
 
     for (const job of jobs) {
+      const isMockJob = job.current_step === 'mock' || String(job.generate_id ?? '').startsWith('mock_')
+      if (isMockJob) {
+        const elapsedMs = Date.now() - new Date(job.started_at || job.created_at).getTime()
+        if (elapsedMs >= MOCK_DURATION_MS) {
+          await supabaseAdmin
+            .from('generation_jobs')
+            .update({
+              status: 'completed',
+              progress: 100,
+              current_step: 'mock',
+              download_url: job.download_url || 'https://example.com/doble-labs-mock-video.mp4',
+              completed_at: new Date().toISOString(),
+            })
+            .eq('id', job.id)
+
+          await supabaseAdmin
+            .from('projects')
+            .update({ status: 'completed' })
+            .eq('id', job.project_id)
+
+          completed++
+        } else {
+          const progress = Math.min(Math.max(job.progress || 5, Math.round(5 + (elapsedMs / MOCK_DURATION_MS) * 90)), 95)
+          await supabaseAdmin
+            .from('generation_jobs')
+            .update({
+              status: elapsedMs < 5_000 ? 'queued' : 'processing',
+              progress,
+              current_step: 'mock',
+            })
+            .eq('id', job.id)
+        }
+        processed++
+        continue
+      }
+
       if (!job.shot_id || !job.generate_id) continue
 
       try {
         const genStatus = await lipdubServer.getGenerationStatus(job.shot_id, job.generate_id)
 
-        if (genStatus.status === 'completed') {
+        const normalizedStatus = String(genStatus.status).toLowerCase()
+
+        if (normalizedStatus === 'completed' || normalizedStatus === 'finished') {
           // Get download URL
           let downloadUrl: string | null = null
           try {
@@ -69,6 +108,19 @@ export async function GET(req: NextRequest) {
             downloadUrl = dl.download_url
           } catch (dlErr) {
             console.warn(`Could not get download URL for job ${job.id}:`, dlErr)
+          }
+
+          if (!downloadUrl) {
+            await supabaseAdmin
+              .from('generation_jobs')
+              .update({
+                status: 'processing',
+                progress: Math.max(job.progress || 0, 95),
+                current_step: 'download_pending',
+              })
+              .eq('id', job.id)
+            processed++
+            continue
           }
 
           // Update job
@@ -137,13 +189,13 @@ export async function GET(req: NextRequest) {
           }
 
           completed++
-        } else if (genStatus.status === 'failed') {
+        } else if (normalizedStatus === 'failed') {
           await supabaseAdmin
             .from('generation_jobs')
             .update({
               status: 'failed',
               current_step: 'failed',
-              error: 'LipDub generation failed',
+              error: 'La generación falló',
               completed_at: new Date().toISOString(),
             })
             .eq('id', job.id)

@@ -47,14 +47,14 @@ export async function POST(req: NextRequest) {
 
     if (!supabaseRes.ok) {
       return NextResponse.json(
-        { error: `Failed to fetch from Supabase: ${supabaseRes.status}` },
+        { error: `No se pudo leer el video de origen: ${supabaseRes.status}` },
         { status: 502 }
       )
     }
 
     if (!supabaseRes.body) {
       return NextResponse.json(
-        { error: 'No response body from Supabase' },
+        { error: 'No se recibió contenido del video de origen' },
         { status: 502 }
       )
     }

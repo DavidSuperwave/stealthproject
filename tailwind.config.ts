@@ -9,25 +9,26 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        background: '#0D0D0F',
-        'bg-secondary': '#1A1A1F',
-        'bg-elevated': '#25252B',
-        border: '#2D2D35',
+        background: '#F4F7F5',
+        'bg-secondary': '#FFFFFF',
+        'bg-elevated': '#EEF3F0',
+        'bg-muted': '#E3ECE7',
+        border: '#C9D8D0',
         accent: {
-          DEFAULT: '#E040FB',
-          secondary: '#B027F7',
-          hover: '#F062FE',
+          DEFAULT: '#087A4B',
+          secondary: '#075F3D',
+          hover: '#075F3D',
         },
-        'text-primary': '#FFFFFF',
-        'text-secondary': '#9CA3AF',
-        'text-muted': '#6B7280',
+        'text-primary': '#0D1F17',
+        'text-secondary': '#334B40',
+        'text-muted': '#4A6156',
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],
       },
       backgroundImage: {
         'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
-        'gradient-accent': 'linear-gradient(135deg, #E040FB 0%, #B027F7 100%)',
+        'gradient-accent': 'linear-gradient(135deg, #087A4B 0%, #075F3D 100%)',
       },
     },
   },

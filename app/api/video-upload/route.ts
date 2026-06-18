@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
     // Validate URL is from Supabase Storage
     if (!isValidSupabaseUrl(videoUrl)) {
       return NextResponse.json(
-        { error: 'Invalid videoUrl. Must be a Supabase Storage URL.' },
+        { error: 'URL de video inválida.' },
         { status: 400 }
       )
     }
@@ -52,7 +52,7 @@ export async function POST(req: NextRequest) {
     if (!res.ok) {
       const errorText = await res.text()
       return NextResponse.json(
-        { error: `LipDub API error: ${res.status}`, details: errorText },
+        { error: `Error al procesar el video: ${res.status}`, details: errorText },
         { status: res.status }
       )
     }
@@ -97,7 +97,7 @@ export async function GET(req: NextRequest) {
     if (!res.ok) {
       const errorText = await res.text()
       return NextResponse.json(
-        { error: `LipDub API error: ${res.status}`, details: errorText },
+        { error: `Error al procesar el video: ${res.status}`, details: errorText },
         { status: res.status }
       )
     }

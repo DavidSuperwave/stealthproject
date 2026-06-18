@@ -213,7 +213,7 @@ export function VideoUpload({
             <div>
               <p className="text-sm font-medium">Processing video...</p>
               <p className="text-xs text-muted-foreground">
-                LipDub is analyzing your video
+                Estamos procesando tu video
               </p>
             </div>
           </div>

@@ -74,10 +74,10 @@ export default function SignupPage() {
     return (
       <div className="text-center">
         <CheckCircle className="w-12 h-12 text-accent mx-auto mb-4" />
-        <h2 className="text-xl font-semibold text-white mb-2">Revisa tu correo</h2>
-        <p className="text-text-secondary text-sm mb-6">
+        <h2 className="mb-2 text-xl font-semibold text-text-primary">Revisa tu correo</h2>
+        <p className="mb-6 text-sm text-text-secondary">
           Enviamos un enlace de confirmación a{' '}
-          <span className="text-white font-medium">{email}</span>.
+          <span className="font-medium text-text-primary">{email}</span>.
           Haz clic en el enlace para activar tu cuenta.
         </p>
         <Link
@@ -92,13 +92,13 @@ export default function SignupPage() {
 
   return (
     <>
-      <h2 className="text-xl font-semibold text-white mb-1">Crear una cuenta</h2>
-      <p className="text-text-secondary text-sm mb-6">
+      <h2 className="mb-1 text-xl font-semibold text-text-primary">Crear una cuenta</h2>
+      <p className="mb-6 text-sm text-text-secondary">
         Comienza a usar DobleLabs
       </p>
 
       {error && (
-        <div className="mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
+        <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
           {error}
         </div>
       )}
@@ -108,7 +108,7 @@ export default function SignupPage() {
         <div className="grid grid-cols-2 gap-3">
           {/* First Name */}
           <div>
-            <label htmlFor="firstName" className="block text-sm font-medium text-text-secondary mb-1.5">
+            <label htmlFor="firstName" className="mb-1.5 block text-sm font-semibold text-text-secondary">
               Nombre
             </label>
             <div className="relative">
@@ -120,14 +120,14 @@ export default function SignupPage() {
                 onChange={(e) => setFirstName(e.target.value)}
                 placeholder="Tu nombre"
                 required
-                className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-bg-elevated border border-border text-white placeholder:text-text-muted focus:outline-none focus:border-accent transition-colors"
+                className="form-field w-full rounded-lg py-2.5 pl-10 pr-4 transition-colors focus:outline-none"
               />
             </div>
           </div>
 
           {/* Last Name */}
           <div>
-            <label htmlFor="lastName" className="block text-sm font-medium text-text-secondary mb-1.5">
+            <label htmlFor="lastName" className="mb-1.5 block text-sm font-semibold text-text-secondary">
               Apellido
             </label>
             <div className="relative">
@@ -139,7 +139,7 @@ export default function SignupPage() {
                 onChange={(e) => setLastName(e.target.value)}
                 placeholder="Tu apellido"
                 required
-                className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-bg-elevated border border-border text-white placeholder:text-text-muted focus:outline-none focus:border-accent transition-colors"
+                className="form-field w-full rounded-lg py-2.5 pl-10 pr-4 transition-colors focus:outline-none"
               />
             </div>
           </div>
@@ -147,7 +147,7 @@ export default function SignupPage() {
 
         {/* Email */}
         <div>
-          <label htmlFor="email" className="block text-sm font-medium text-text-secondary mb-1.5">
+          <label htmlFor="email" className="mb-1.5 block text-sm font-semibold text-text-secondary">
             Correo electrónico
           </label>
           <div className="relative">
@@ -159,14 +159,14 @@ export default function SignupPage() {
               onChange={(e) => setEmail(e.target.value)}
               placeholder="tu@ejemplo.com"
               required
-              className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-bg-elevated border border-border text-white placeholder:text-text-muted focus:outline-none focus:border-accent transition-colors"
+              className="form-field w-full rounded-lg py-2.5 pl-10 pr-4 transition-colors focus:outline-none"
             />
           </div>
         </div>
 
         {/* Phone */}
         <div>
-          <label htmlFor="phone" className="block text-sm font-medium text-text-secondary mb-1.5">
+          <label htmlFor="phone" className="mb-1.5 block text-sm font-semibold text-text-secondary">
             Número de teléfono
           </label>
           <div className="relative">
@@ -177,14 +177,14 @@ export default function SignupPage() {
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               placeholder="+52 55 1234 5678"
-              className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-bg-elevated border border-border text-white placeholder:text-text-muted focus:outline-none focus:border-accent transition-colors"
+              className="form-field w-full rounded-lg py-2.5 pl-10 pr-4 transition-colors focus:outline-none"
             />
           </div>
         </div>
 
         {/* Password */}
         <div>
-          <label htmlFor="password" className="block text-sm font-medium text-text-secondary mb-1.5">
+          <label htmlFor="password" className="mb-1.5 block text-sm font-semibold text-text-secondary">
             Contraseña
           </label>
           <div className="relative">
@@ -197,7 +197,7 @@ export default function SignupPage() {
               placeholder="Mínimo 6 caracteres"
               required
               minLength={6}
-              className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-bg-elevated border border-border text-white placeholder:text-text-muted focus:outline-none focus:border-accent transition-colors"
+              className="form-field w-full rounded-lg py-2.5 pl-10 pr-4 transition-colors focus:outline-none"
             />
           </div>
         </div>
@@ -206,7 +206,7 @@ export default function SignupPage() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full py-2.5 rounded-lg bg-gradient-accent text-white font-medium hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2"
+          className="flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-accent py-2.5 font-semibold text-white shadow-sm transition hover:opacity-95 disabled:opacity-50"
         >
           {loading && <Loader2 className="w-4 h-4 animate-spin" />}
           Crear cuenta

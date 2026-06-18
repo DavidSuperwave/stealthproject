@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { Loader2, CheckCircle, XCircle, Film, Wand2, Music, CreditCard, Sparkles, Cpu, Zap } from 'lucide-react'
 import { lipdubApi } from '@/lib/lipdub-api'
 import Link from 'next/link'
+import { uploadCardPadded, uploadPrimaryButton, uploadProgressBar, uploadProgressTrack } from './uploadStyles'
 
 interface ShotCreatorProps {
   videoId: string
@@ -136,7 +137,7 @@ export default function ShotCreator({ videoId, audioId, scriptText, projectId, i
             setShotId(localShotId)
             videoReady = true
           } else if (videoStatus.upload_status === 'failed') {
-            throw new Error('El procesamiento del video falló en LipDub')
+            throw new Error('El procesamiento del video falló')
           }
 
           attempts++
@@ -204,7 +205,7 @@ export default function ShotCreator({ videoId, audioId, scriptText, projectId, i
           console.log('[ShotCreator] Audio ready')
           audioReady = true
         } else if (audioStatus.upload_status === 'failed') {
-          throw new Error('El procesamiento del audio falló en LipDub')
+          throw new Error('El procesamiento del audio falló')
         }
 
         attempts++
@@ -296,12 +297,12 @@ export default function ShotCreator({ videoId, audioId, scriptText, projectId, i
           body: JSON.stringify({
             amount: creditsNeeded,
             project_id: projectId || null,
-            reason: 'Reembolso: LipDub no devolvió ID de generación',
+            reason: 'Reembolso: no se recibió ID de generación',
           }),
         })
         setCreditsDeducted(0)
         window.dispatchEvent(new Event('credits-updated'))
-        throw new Error('LipDub no devolvió un ID de generación válido')
+        throw new Error('No se recibió un ID de generación válido')
       }
 
       localGenerateId = String(generate.generate_id)
@@ -426,21 +427,21 @@ export default function ShotCreator({ videoId, audioId, scriptText, projectId, i
         }
       case 'complete':
         return {
-          icon: <CheckCircle className="w-10 h-10 text-green-400" />,
+          icon: <CheckCircle className="w-10 h-10 text-green-700" />,
           title: '¡Tu Video Está Listo!',
           description: 'Tu video con IA se ha generado exitosamente.',
           detail: null,
         }
       case 'insufficient_credits':
         return {
-          icon: <CreditCard className="w-10 h-10 text-red-400" />,
+          icon: <CreditCard className="w-10 h-10 text-red-700" />,
           title: 'Créditos Insuficientes',
           description: error || 'No tienes suficientes créditos para generar este video.',
           detail: null,
         }
       case 'error':
         return {
-          icon: <XCircle className="w-10 h-10 text-red-400" />,
+          icon: <XCircle className="w-10 h-10 text-red-700" />,
           title: 'Error en la Generación',
           description: error || 'Algo salió mal durante el proceso.',
           detail: null,
@@ -462,13 +463,13 @@ export default function ShotCreator({ videoId, audioId, scriptText, projectId, i
 
   return (
     <div className="w-full">
-      <div className="bg-bg-secondary rounded-2xl border border-border p-8 sm:p-10">
+      <div className={uploadCardPadded}>
         {/* Top section: Icon + Title */}
         <div className="text-center mb-8">
-          <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-accent/10 border border-accent/20 flex items-center justify-center">
+          <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-accent/10 border border-accent/20 flex items-center justify-center shadow-sm">
             {stepInfo.icon}
           </div>
-          <h2 className="text-2xl font-bold text-white mb-2">{stepInfo.title}</h2>
+          <h2 className="text-2xl font-bold text-text-primary mb-2">{stepInfo.title}</h2>
           <p className="text-text-secondary max-w-lg mx-auto">{stepInfo.description}</p>
           {stepInfo.detail && (
             <p className="text-xs text-text-muted mt-3 max-w-md mx-auto">{stepInfo.detail}</p>
@@ -479,7 +480,7 @@ export default function ShotCreator({ videoId, audioId, scriptText, projectId, i
         {step === 'checking_generate' && (
           <div className="text-center mb-6">
             <p className="text-sm text-text-muted">
-              Tiempo transcurrido: <span className="text-white font-medium">{getElapsedTime() || '0:00'}</span>
+              Tiempo transcurrido: <span className="text-text-primary font-medium">{getElapsedTime() || '0:00'}</span>
               <span className="text-text-muted ml-2">/ ~30:00 estimado</span>
             </p>
           </div>
@@ -487,7 +488,7 @@ export default function ShotCreator({ videoId, audioId, scriptText, projectId, i
 
         {/* Long-running notice */}
         {(step === 'checking_shot' || step === 'checking_generate') && (
-          <div className="mb-6 p-4 bg-accent/5 border border-accent/20 rounded-xl text-center">
+          <div className="mb-6 rounded-2xl border border-accent/20 bg-accent/10 p-4 text-center">
             <Zap className="w-5 h-5 text-accent mx-auto mb-2" />
             <p className="text-sm text-accent font-medium">Procesando con IA</p>
             <p className="text-xs text-text-muted mt-1">
@@ -498,14 +499,14 @@ export default function ShotCreator({ videoId, audioId, scriptText, projectId, i
 
         {/* Insufficient credits CTA */}
         {step === 'insufficient_credits' && creditsInfo && (
-          <div className="mb-6 p-4 bg-red-500/10 border border-red-500/30 rounded-xl text-center space-y-3">
-            <p className="text-sm text-red-300">
-              Necesitas <span className="font-bold text-white">{creditsInfo.needed}</span> créditos pero solo tienes{' '}
-              <span className="font-bold text-white">{creditsInfo.remaining.toFixed(2)}</span>.
+          <div className="mb-6 rounded-2xl border border-red-200 bg-red-50 p-4 text-center space-y-3">
+            <p className="text-sm text-red-700">
+              Necesitas <span className="font-bold text-text-primary">{creditsInfo.needed}</span> créditos pero solo tienes{' '}
+              <span className="font-bold text-text-primary">{creditsInfo.remaining.toFixed(2)}</span>.
             </p>
             <Link
               href="/app/subscription"
-              className="inline-flex items-center gap-2 px-5 py-2.5 bg-accent hover:bg-accent-hover text-white rounded-lg font-medium transition-colors text-sm"
+              className={uploadPrimaryButton}
             >
               <CreditCard className="w-4 h-4" />
               Comprar más créditos
@@ -517,13 +518,13 @@ export default function ShotCreator({ videoId, audioId, scriptText, projectId, i
         <div className="space-y-3">
           <div className="flex items-center justify-between text-sm">
             <span className="text-text-secondary">Progreso general</span>
-            <span className="text-white font-semibold">{shownProgress}%</span>
+            <span className="font-semibold text-accent">{shownProgress}%</span>
           </div>
 
-          <div className="h-4 bg-bg-elevated rounded-full overflow-hidden">
+          <div className={uploadProgressTrack}>
             <div
               className={`h-full rounded-full transition-all duration-1000 ease-out ${
-                step === 'error' ? 'bg-red-500' : step === 'complete' ? 'bg-green-500' : 'bg-gradient-to-r from-accent to-accent-secondary'
+                step === 'error' ? 'bg-red-600' : step === 'complete' ? 'bg-green-700' : uploadProgressBar
               }`}
               style={{ width: `${shownProgress}%` }}
             />
@@ -531,7 +532,7 @@ export default function ShotCreator({ videoId, audioId, scriptText, projectId, i
         </div>
 
         {/* Step indicators */}
-        <div className="mt-8 grid grid-cols-5 gap-3">
+        <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-5">
           {[
             { label: 'Video', icon: Film, complete: shownProgress >= 20, active: step === 'creating_shot' },
             { label: 'Modelo IA', icon: Cpu, complete: shownProgress >= 45, active: step === 'checking_shot' },
@@ -545,18 +546,18 @@ export default function ShotCreator({ videoId, audioId, scriptText, projectId, i
                 <div className={`
                   w-10 h-10 mx-auto rounded-full flex items-center justify-center mb-2 transition-all
                   ${item.complete
-                    ? 'bg-green-500/20 border border-green-500/30'
+                    ? 'bg-green-50 border border-green-200'
                     : item.active
-                      ? 'bg-accent/20 border border-accent/30'
+                      ? 'bg-accent/10 border border-accent/30'
                       : 'bg-bg-elevated border border-border'
                   }
                 `}>
                   <Icon className={`w-4 h-4 ${
-                    item.complete ? 'text-green-400' : item.active ? 'text-accent' : 'text-text-muted'
+                    item.complete ? 'text-green-700' : item.active ? 'text-accent' : 'text-text-muted'
                   }`} />
                 </div>
                 <span className={`text-xs font-medium ${
-                  item.complete ? 'text-green-400' : item.active ? 'text-accent' : 'text-text-muted'
+                  item.complete ? 'text-green-700' : item.active ? 'text-accent' : 'text-text-muted'
                 }`}>
                   {item.label}
                 </span>

@@ -3,6 +3,16 @@
 import { useState } from 'react'
 import { Upload, X, Music, FileText, Loader2, CheckCircle, Lock } from 'lucide-react'
 import { lipdubApi, type AudioUploadResponse } from '@/lib/lipdub-api'
+import {
+  uploadCard,
+  uploadDropzone,
+  uploadIconBadge,
+  uploadPanelPadded,
+  uploadPrimaryButton,
+  uploadProgressBar,
+  uploadProgressTrack,
+  uploadSecondaryButton,
+} from './uploadStyles'
 
 interface AudioUploadEnhancedProps {
   videoId: string
@@ -96,7 +106,7 @@ export default function AudioUploadEnhanced({ videoId, onComplete, onCancel }: A
         console.log('[Audio] Initiate response:', JSON.stringify(upload))
 
         if (!upload.audio_id || !upload.upload_url) {
-          throw new Error('LipDub no devolvió audio_id o upload_url válidos')
+          throw new Error('No se recibieron datos válidos para procesar el audio')
         }
 
         setAudioId(upload.audio_id)
@@ -143,7 +153,7 @@ export default function AudioUploadEnhanced({ videoId, onComplete, onCancel }: A
           onComplete(id)
           return true
         } else if (audioStatus.upload_status === 'failed') {
-          setError('El procesamiento del audio falló en LipDub')
+          setError('El procesamiento del audio falló')
           setStatus('error')
           return true
         }
@@ -179,9 +189,9 @@ export default function AudioUploadEnhanced({ videoId, onComplete, onCancel }: A
       case 'processing':
         return { text: 'Procesando audio...', icon: <Loader2 className="w-5 h-5 animate-spin" /> }
       case 'complete':
-        return { text: '¡Audio listo!', icon: <CheckCircle className="w-5 h-5 text-green-400" /> }
+        return { text: '¡Audio listo!', icon: <CheckCircle className="w-5 h-5 text-green-700" /> }
       case 'error':
-        return { text: error || 'Ocurrió un error', icon: <X className="w-5 h-5 text-red-400" /> }
+        return { text: error || 'Ocurrió un error', icon: <X className="w-5 h-5 text-red-700" /> }
       default:
         return null
     }
@@ -190,35 +200,36 @@ export default function AudioUploadEnhanced({ videoId, onComplete, onCancel }: A
   const statusDisplay = getStatusDisplay()
 
   return (
-    <div className="w-full bg-bg-secondary rounded-xl border border-border">
+    <div className={`w-full overflow-hidden ${uploadCard}`}>
       {/* Header */}
-      <div className="flex items-center justify-between p-6 border-b border-border">
+      <div className="flex items-center justify-between gap-4 p-6 sm:p-8">
         <div>
-          <h2 className="text-lg font-semibold text-white">Paso 3: Sube tu audio personalizado</h2>
+          <p className="text-sm font-semibold uppercase text-accent">Custom audio</p>
+          <h2 className="mt-1 text-xl font-semibold text-text-primary">Paso 3: Sube tu audio personalizado</h2>
           <p className="text-sm text-text-secondary">Este audio se combinará con tu video maestro</p>
         </div>
-        <button onClick={onCancel} className="p-2 hover:bg-bg-elevated rounded-lg">
-          <X className="w-5 h-5 text-text-muted" />
+        <button onClick={onCancel} className="rounded-full p-2 text-text-muted transition hover:bg-bg-elevated hover:text-text-primary">
+          <X className="w-5 h-5" />
         </button>
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-border">
+      <div className="mx-6 grid rounded-full border border-border bg-bg-elevated/70 p-1 sm:mx-8 sm:grid-cols-2">
         <button
           onClick={() => setActiveTab('upload')}
-          className={`flex-1 flex items-center justify-center gap-2 px-4 py-4 text-sm font-medium transition-colors
-            ${activeTab === 'upload' ? 'text-accent border-b-2 border-accent' : 'text-text-secondary hover:text-white'}`}
+          className={`flex items-center justify-center gap-2 rounded-full px-4 py-2.5 text-sm font-semibold transition-colors
+            ${activeTab === 'upload' ? 'bg-white text-accent shadow-sm' : 'text-text-secondary hover:text-text-primary'}`}
         >
           <Music className="w-4 h-4" />
           Subir Audio
         </button>
         <button
           disabled
-          className="flex-1 flex items-center justify-center gap-2 px-4 py-4 text-sm font-medium text-text-muted opacity-50 cursor-not-allowed"
+          className="flex items-center justify-center gap-2 rounded-full px-4 py-2.5 text-sm font-semibold text-text-muted opacity-60 cursor-not-allowed"
         >
           <FileText className="w-4 h-4" />
           Escribir Guion
-          <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-bg-secondary border border-border text-[10px] text-text-muted font-medium">
+          <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-white border border-border text-[10px] text-text-muted font-medium">
             <Lock className="w-3 h-3" />
             Próximamente
           </span>
@@ -226,7 +237,7 @@ export default function AudioUploadEnhanced({ videoId, onComplete, onCancel }: A
       </div>
 
       {/* Content */}
-      <div className="p-6">
+      <div className="p-6 sm:p-8">
         <div className="space-y-6">
           {!selectedFile ? (
             <div
@@ -234,8 +245,8 @@ export default function AudioUploadEnhanced({ videoId, onComplete, onCancel }: A
               onDragLeave={handleDragLeave}
               onDrop={handleDrop}
               className={`
-                relative border-2 border-dashed rounded-xl p-12 text-center transition-all
-                ${isDragging ? 'border-accent bg-accent/5' : 'border-border bg-black/20 hover:border-accent/50'}
+                ${uploadDropzone}
+                ${isDragging ? 'border-accent bg-accent/10 shadow-[0_18px_60px_rgba(8,122,75,0.10)]' : 'border-border bg-bg-elevated/70 hover:border-accent/50 hover:bg-white'}
               `}
             >
               <input
@@ -246,29 +257,29 @@ export default function AudioUploadEnhanced({ videoId, onComplete, onCancel }: A
               />
 
               <div className="space-y-4">
-                <div className="w-16 h-16 mx-auto rounded-full bg-bg-elevated flex items-center justify-center">
+                <div className={`${uploadIconBadge} mx-auto h-16 w-16`}>
                   <Upload className="w-8 h-8 text-text-secondary" />
                 </div>
-                <p className="text-lg text-white">Arrastra tu archivo de audio aquí o haz clic</p>
+                <p className="text-lg font-semibold text-text-primary">Arrastra tu archivo de audio aquí o haz clic</p>
                 <p className="text-sm text-text-muted">Formato MP3, WAV o M4A</p>
               </div>
             </div>
           ) : (
-            <div className="bg-black/20 rounded-xl border border-border p-6">
+            <div className={uploadPanelPadded}>
               <div className="flex items-center gap-4">
-                <div className="w-14 h-14 rounded-lg bg-accent/20 flex items-center justify-center">
+                <div className="w-14 h-14 rounded-2xl border border-accent/15 bg-accent/10 flex items-center justify-center">
                   <Music className="w-7 h-7 text-accent" />
                 </div>
                 <div className="flex-1">
-                  <p className="text-white font-medium">{selectedFile.name}</p>
+                  <p className="text-text-primary font-semibold">{selectedFile.name}</p>
                   <p className="text-sm text-text-secondary">{(selectedFile.size / (1024 * 1024)).toFixed(2)} MB</p>
                 </div>
                 {status === 'idle' && (
                   <button 
                     onClick={() => setSelectedFile(null)}
-                    className="p-2 hover:bg-bg-elevated rounded-lg"
+                    className="rounded-full p-2 text-text-muted transition hover:bg-white hover:text-text-primary"
                   >
-                    <X className="w-5 h-5 text-text-muted" />
+                    <X className="w-5 h-5" />
                   </button>
                 )}
               </div>
@@ -281,11 +292,11 @@ export default function AudioUploadEnhanced({ videoId, onComplete, onCancel }: A
                       {statusDisplay?.icon}
                       {statusDisplay?.text}
                     </span>
-                    <span className="text-white">{progress}%</span>
+                    <span className="font-semibold text-accent">{progress}%</span>
                   </div>
-                  <div className="h-2 bg-bg-elevated rounded-full overflow-hidden">
+                  <div className={uploadProgressTrack}>
                     <div 
-                      className="h-full bg-accent transition-all duration-300"
+                      className={uploadProgressBar}
                       style={{ width: `${progress}%` }}
                     />
                   </div>
@@ -294,8 +305,8 @@ export default function AudioUploadEnhanced({ videoId, onComplete, onCancel }: A
 
               {/* Error */}
               {status === 'error' && (
-                <div className="mt-4 p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
-                  <p className="text-red-400 text-sm">{error}</p>
+                <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 p-3">
+                  <p className="text-red-700 text-sm">{error}</p>
                 </div>
               )}
             </div>
@@ -304,10 +315,10 @@ export default function AudioUploadEnhanced({ videoId, onComplete, onCancel }: A
       </div>
 
       {/* Footer */}
-      <div className="flex gap-3 p-6 border-t border-border">
+      <div className="flex gap-3 border-t border-border/70 p-6 sm:p-8">
         <button
           onClick={onCancel}
-          className="flex-1 px-4 py-3 bg-bg-elevated hover:bg-border text-white rounded-lg font-medium transition-colors"
+          className={`flex-1 ${uploadSecondaryButton}`}
         >
           Cancelar
         </button>
@@ -315,7 +326,7 @@ export default function AudioUploadEnhanced({ videoId, onComplete, onCancel }: A
         <button
           onClick={handleUploadAudio}
           disabled={!selectedFile || status !== 'idle'}
-          className="flex-1 px-4 py-3 bg-accent hover:bg-accent-hover disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-colors"
+          className={`flex-1 ${uploadPrimaryButton}`}
         >
           {status === 'idle' ? 'Subir Audio' : statusDisplay?.text}
         </button>

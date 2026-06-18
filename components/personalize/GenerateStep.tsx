@@ -97,7 +97,7 @@ export default function GenerateStep({
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-semibold text-white mb-2">Generate Results</h2>
+        <h2 className="text-2xl font-semibold text-white mb-2">Generar resultados</h2>
         <p className="text-text-secondary">Review your campaign before generating personalized videos.</p>
       </div>
 

@@ -63,7 +63,7 @@ export async function POST(req: NextRequest) {
             currency: 'mxn',
             product_data: {
               name: pkg.name,
-              description: `${pkg.credits} créditos (${pkg.minutes_equivalent} min de contenido)${pkg.includes_scripts ? ' + Acceso a Guiones AI' : ''}`,
+              description: `${pkg.credits} créditos (${pkg.minutes_equivalent} min de contenido)${pkg.includes_scripts ? ' + Acceso a guiones' : ''}`,
             },
             unit_amount: pkg.price_cents_mxn,
           },

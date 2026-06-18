@@ -22,6 +22,10 @@ interface DraftBody {
     generate_id: string
     audio_id?: string
     status?: string
+    progress?: number
+    current_step?: string
+    download_url?: string
+    error?: string
   }
   status?: 'draft' | 'processing' | 'completed' | 'failed'
 }
@@ -103,10 +107,18 @@ export async function POST(
         .limit(1)
         .maybeSingle()
 
+      const requestedStatus = body.generation.status || 'processing'
+      const status = requestedStatus === 'completed' && !body.generation.download_url ? 'processing' : requestedStatus
       const genPayload = {
         shot_id: body.generation.shot_id,
         generate_id: body.generation.generate_id,
-        status: body.generation.status || 'processing',
+        audio_id: body.generation.audio_id ?? null,
+        status,
+        progress: body.generation.progress ?? (status === 'completed' ? 100 : 70),
+        current_step: body.generation.current_step ?? (status === 'completed' ? 'completed' : 'generating'),
+        download_url: body.generation.download_url ?? null,
+        error: body.generation.error ?? null,
+        completed_at: status === 'completed' ? new Date().toISOString() : null,
       }
 
       if (existingJob?.id) {
@@ -119,6 +131,7 @@ export async function POST(
           .from('generation_jobs')
           .insert({
             project_id: projectId,
+            user_id: user.id,
             ...genPayload,
             started_at: new Date().toISOString(),
           })

@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
@@ -109,6 +109,19 @@ function SubscriptionContent() {
     }).format(pesos)
   }
 
+  const featureLabels: Record<string, string> = {
+    '10 minutes of AI video': '10 minutos de video',
+    '35 minutes of AI video': '35 minutos de video',
+    '80 minutes of AI video': '80 minutos de video',
+    '25 minutos de video': '25 minutos de video',
+    '75 minutos de video': '75 minutos de video',
+    'Standard generation queue': 'Cola estÃ¡ndar de generaciÃ³n',
+    'Priority workflow support': 'Soporte prioritario de flujo',
+    'Script chat access': 'Acceso a guiones',
+    'Campaign planning': 'PlaneaciÃ³n de campaÃ±as',
+    'Managed service review': 'RevisiÃ³n asistida del servicio',
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64 text-text-secondary">
@@ -121,8 +134,8 @@ function SubscriptionContent() {
   return (
     <div className="max-w-4xl mx-auto space-y-8">
       <div>
-        <h1 className="text-2xl font-semibold text-white">Suscripción y Créditos</h1>
-        <p className="text-text-secondary mt-1">Compra créditos para generar videos personalizados con IA</p>
+        <h1 className="text-2xl font-semibold text-white">SuscripciÃ³n y crÃ©ditos</h1>
+        <p className="text-text-secondary mt-1">Compra crÃ©ditos para generar videos personalizados</p>
       </div>
 
       {/* Success / Cancel banners */}
@@ -131,7 +144,7 @@ function SubscriptionContent() {
           <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0" />
           <div>
             <p className="text-green-300 font-medium">Compra exitosa</p>
-            <p className="text-green-300/70 text-sm">Tus créditos se han agregado a tu cuenta.</p>
+            <p className="text-green-300/70 text-sm">Tus crÃ©ditos se han agregado a tu cuenta.</p>
           </div>
         </div>
       )}
@@ -141,7 +154,7 @@ function SubscriptionContent() {
           <XCircle className="w-5 h-5 text-yellow-400 flex-shrink-0" />
           <div>
             <p className="text-yellow-300 font-medium">Compra cancelada</p>
-            <p className="text-yellow-300/70 text-sm">No se realizó ningún cargo. Puedes intentar de nuevo cuando quieras.</p>
+            <p className="text-yellow-300/70 text-sm">No se realizÃ³ ningÃºn cargo. Puedes intentar de nuevo cuando quieras.</p>
           </div>
         </div>
       )}
@@ -156,26 +169,26 @@ function SubscriptionContent() {
               <CreditCard className="w-5 h-5 text-accent" />
             </div>
             <div>
-              <p className="text-white font-medium">Créditos Disponibles</p>
+              <p className="text-white font-medium">CrÃ©ditos disponibles</p>
             </div>
           </div>
           <div className="text-right">
-            <p className="text-3xl font-bold text-white">{credits !== null ? credits.toFixed(2) : '—'}</p>
-            <p className="text-text-secondary text-sm">créditos</p>
+            <p className="text-3xl font-bold text-white">{credits !== null ? credits.toFixed(2) : 'â€”'}</p>
+            <p className="text-text-secondary text-sm">crÃ©ditos</p>
           </div>
         </div>
 
         <div className="mt-3 p-3 bg-accent/5 border border-accent/10 rounded-lg">
           <p className="text-xs text-text-secondary">
-            <span className="text-accent font-medium">5 créditos = 1 minuto</span> de video generado.
-            Los créditos se deducen al iniciar la generación de cada video.
+            <span className="text-accent font-medium">5 crÃ©ditos = 1 minuto</span> de video generado.
+            Los crÃ©ditos se deducen al iniciar la generaciÃ³n de cada video.
           </p>
         </div>
       </div>
 
       {/* Credit Packages */}
       <div>
-        <h2 className="text-lg font-medium text-white mb-4">Comprar Créditos</h2>
+        <h2 className="text-lg font-medium text-white mb-4">Comprar crÃ©ditos</h2>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {packages.map((pkg) => (
@@ -204,7 +217,7 @@ function SubscriptionContent() {
                   {pkg.includes_scripts && (
                     <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-accent/10 text-accent text-xs font-medium rounded-full">
                       <Sparkles className="w-3 h-3" />
-                      Guiones AI
+                      Guiones
                     </span>
                   )}
                 </div>
@@ -215,7 +228,7 @@ function SubscriptionContent() {
                 </div>
 
                 <p className="text-text-secondary mt-1">
-                  {pkg.credits} créditos — {pkg.minutes_equivalent} minutos de contenido
+                  {pkg.minutes_equivalent} minutos de video - {pkg.credits} creditos
                 </p>
               </div>
 
@@ -224,7 +237,7 @@ function SubscriptionContent() {
                 {pkg.features.map((feature) => (
                   <li key={feature} className="flex items-center gap-2 text-sm text-text-secondary">
                     <Check className={`w-4 h-4 flex-shrink-0 ${pkg.is_best_value ? 'text-accent' : 'text-green-400'}`} />
-                    {feature}
+                    {featureLabels[feature] ?? feature.replaceAll('campaÃ±as', 'campanas')}
                   </li>
                 ))}
               </ul>
@@ -247,7 +260,7 @@ function SubscriptionContent() {
                 ) : (
                   <>
                     <CreditCard className="w-4 h-4" />
-                    Comprar {pkg.credits} créditos
+                    Comprar {pkg.minutes_equivalent} minutos
                   </>
                 )}
               </button>
@@ -258,23 +271,23 @@ function SubscriptionContent() {
 
       {/* How credits work */}
       <div className="bg-bg-secondary rounded-xl border border-border p-6">
-        <h2 className="text-lg font-medium text-white mb-4">¿Cómo funcionan los créditos?</h2>
+        <h2 className="text-lg font-medium text-white mb-4">Â¿CÃ³mo funcionan los crÃ©ditos?</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {[
             {
               step: '1',
-              title: 'Compra créditos',
-              description: 'Elige un paquete y paga de forma segura con Stripe.',
+              title: 'Compra crÃ©ditos',
+              description: 'Elige un paquete y paga de forma segura.',
             },
             {
               step: '2',
               title: 'Genera videos',
-              description: 'Se deducen 5 créditos por cada minuto de video generado.',
+              description: 'Se deducen 5 crÃ©ditos por cada minuto de video generado.',
             },
             {
               step: '3',
-              title: 'Sin expiración',
-              description: 'Tus créditos no tienen fecha de vencimiento. Úsalos cuando quieras.',
+              title: 'Sin expiraciÃ³n',
+              description: 'Tus crÃ©ditos no tienen fecha de vencimiento. Ãšsalos cuando quieras.',
             },
           ].map((item) => (
             <div key={item.step} className="text-center p-4">
@@ -305,3 +318,4 @@ export default function SubscriptionPage() {
     </Layout>
   )
 }
+

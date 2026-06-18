@@ -18,9 +18,9 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
           
           // Variants
           variant === "default" && "bg-accent text-white hover:bg-accent-hover",
-          variant === "outline" && "border border-border bg-transparent hover:bg-bg-elevated text-white",
-          variant === "ghost" && "hover:bg-bg-elevated text-white",
-          variant === "secondary" && "bg-bg-elevated text-white hover:bg-border",
+          variant === "outline" && "border border-border bg-white text-text-secondary hover:bg-bg-elevated hover:text-text-primary",
+          variant === "ghost" && "text-text-secondary hover:bg-bg-elevated hover:text-text-primary",
+          variant === "secondary" && "bg-bg-elevated text-text-primary hover:bg-bg-muted",
           
           // Sizes
           size === "default" && "h-10 px-4 py-2",

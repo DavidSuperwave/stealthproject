@@ -31,7 +31,7 @@ export async function PUT(req: NextRequest) {
     return NextResponse.json(
       { 
         error: 'Missing "url" query parameter',
-        notice: 'For files >4.5MB, use Supabase Storage upload instead. See VIDEO_UPLOAD_FIX.md'
+        notice: 'Para archivos mayores a 4.5MB, usa la carga directa de almacenamiento.'
       },
       { status: 400 }
     )
@@ -47,7 +47,7 @@ export async function PUT(req: NextRequest) {
       return NextResponse.json(
         { 
           error: `File too large (${sizeMB.toFixed(1)}MB). Max is 4.5MB for this endpoint.`,
-          solution: 'Use Supabase Storage upload for larger files',
+          solution: 'Usa la carga directa de almacenamiento para archivos grandes',
           docs: '/VIDEO_UPLOAD_FIX.md'
         },
         { status: 413 }
@@ -64,7 +64,7 @@ export async function PUT(req: NextRequest) {
       return NextResponse.json(
         { 
           error: `File too large (${(body.byteLength / 1024 / 1024).toFixed(1)}MB). Max is 4.5MB for this endpoint.`,
-          solution: 'Use Supabase Storage upload for larger files',
+          solution: 'Usa la carga directa de almacenamiento para archivos grandes',
           docs: '/VIDEO_UPLOAD_FIX.md'
         },
         { status: 413 }
@@ -89,7 +89,7 @@ export async function PUT(req: NextRequest) {
 
     return NextResponse.json({ 
       ok: true,
-      notice: 'Consider migrating to Supabase Storage for larger files'
+      notice: 'Considera usar carga directa de almacenamiento para archivos grandes'
     }, { status: 200 })
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Upload proxy failed'

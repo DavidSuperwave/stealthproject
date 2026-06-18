@@ -36,13 +36,13 @@ export default function LoginPage() {
 
   return (
     <>
-      <h2 className="text-xl font-semibold text-white mb-1">Bienvenido de nuevo</h2>
-      <p className="text-text-secondary text-sm mb-6">
+      <h2 className="mb-1 text-xl font-semibold text-text-primary">Bienvenido de nuevo</h2>
+      <p className="mb-6 text-sm text-text-secondary">
         Inicia sesión para continuar
       </p>
 
       {error && (
-        <div className="mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
+        <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
           {error}
         </div>
       )}
@@ -50,7 +50,7 @@ export default function LoginPage() {
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Email */}
         <div>
-          <label htmlFor="email" className="block text-sm font-medium text-text-secondary mb-1.5">
+          <label htmlFor="email" className="mb-1.5 block text-sm font-semibold text-text-secondary">
             Correo electrónico
           </label>
           <div className="relative">
@@ -62,14 +62,14 @@ export default function LoginPage() {
               onChange={(e) => setEmail(e.target.value)}
               placeholder="tu@ejemplo.com"
               required
-              className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-bg-elevated border border-border text-white placeholder:text-text-muted focus:outline-none focus:border-accent transition-colors"
+              className="form-field w-full rounded-lg py-2.5 pl-10 pr-4 transition-colors focus:outline-none"
             />
           </div>
         </div>
 
         {/* Password */}
         <div>
-          <label htmlFor="password" className="block text-sm font-medium text-text-secondary mb-1.5">
+          <label htmlFor="password" className="mb-1.5 block text-sm font-semibold text-text-secondary">
             Contraseña
           </label>
           <div className="relative">
@@ -81,7 +81,7 @@ export default function LoginPage() {
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Ingresa tu contraseña"
               required
-              className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-bg-elevated border border-border text-white placeholder:text-text-muted focus:outline-none focus:border-accent transition-colors"
+              className="form-field w-full rounded-lg py-2.5 pl-10 pr-4 transition-colors focus:outline-none"
             />
           </div>
         </div>
@@ -90,7 +90,7 @@ export default function LoginPage() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full py-2.5 rounded-lg bg-gradient-accent text-white font-medium hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2"
+          className="flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-accent py-2.5 font-semibold text-white shadow-sm transition hover:opacity-95 disabled:opacity-50"
         >
           {loading && <Loader2 className="w-4 h-4 animate-spin" />}
           Iniciar sesión

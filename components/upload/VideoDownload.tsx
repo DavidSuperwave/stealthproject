@@ -3,12 +3,13 @@
 import { useState, useEffect, useRef } from 'react'
 import { Download, FileVideo, CheckCircle, ExternalLink, Loader2, AlertCircle, RefreshCw } from 'lucide-react'
 import { lipdubApi } from '@/lib/lipdub-api'
+import { uploadCardPadded, uploadPanelPadded, uploadPrimaryButton, uploadSecondaryButton } from './uploadStyles'
 
 interface VideoDownloadProps {
   shotId: number
   generateId: string
   filename?: string
-  onDownload?: () => void
+  onDownload?: (downloadUrl: string) => void
   onError?: (error: string) => void
 }
 
@@ -36,7 +37,7 @@ export default function VideoDownload({
       const result = await lipdubApi.getDownloadUrl(shotId, generateId)
       if (result.download_url) {
         setDownloadUrl(result.download_url)
-        onDownload?.()
+        onDownload?.(result.download_url)
       } else {
         throw new Error('El servidor no devolvió un enlace de descarga')
       }
@@ -60,11 +61,11 @@ export default function VideoDownload({
   if (!isValid) {
     return (
       <div className="w-full max-w-xl mx-auto">
-        <div className="bg-bg-secondary rounded-xl border border-border p-8 text-center">
-          <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-yellow-500/20 flex items-center justify-center">
-            <AlertCircle className="w-10 h-10 text-yellow-400" />
+        <div className={`${uploadCardPadded} text-center`}>
+          <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-yellow-50 border border-yellow-200 flex items-center justify-center">
+            <AlertCircle className="w-10 h-10 text-yellow-700" />
           </div>
-          <h2 className="text-2xl font-semibold text-white mb-2">Video en proceso</h2>
+          <h2 className="text-2xl font-semibold text-text-primary mb-2">Video en proceso</h2>
           <p className="text-text-secondary mb-4">
             Tu video aún se está procesando o ocurrió un error. Vuelve a intentar más tarde.
           </p>
@@ -81,11 +82,11 @@ export default function VideoDownload({
   if (isLoading) {
     return (
       <div className="w-full max-w-xl mx-auto">
-        <div className="bg-bg-secondary rounded-xl border border-border p-8 text-center">
-          <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-accent/20 flex items-center justify-center">
+        <div className={`${uploadCardPadded} text-center`}>
+          <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-accent/10 border border-accent/20 flex items-center justify-center">
             <Loader2 className="w-10 h-10 text-accent animate-spin" />
           </div>
-          <h2 className="text-2xl font-semibold text-white mb-2">Obteniendo tu video...</h2>
+          <h2 className="text-2xl font-semibold text-text-primary mb-2">Obteniendo tu video...</h2>
           <p className="text-text-secondary mb-4">
             Preparando el enlace de descarga de tu video generado con IA.
           </p>
@@ -102,11 +103,11 @@ export default function VideoDownload({
   if (error) {
     return (
       <div className="w-full max-w-xl mx-auto">
-        <div className="bg-bg-secondary rounded-xl border border-border p-8 text-center">
-          <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-red-500/20 flex items-center justify-center">
-            <AlertCircle className="w-10 h-10 text-red-400" />
+        <div className={`${uploadCardPadded} text-center`}>
+          <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-red-50 border border-red-200 flex items-center justify-center">
+            <AlertCircle className="w-10 h-10 text-red-700" />
           </div>
-          <h2 className="text-2xl font-semibold text-white mb-2">Error al obtener el video</h2>
+          <h2 className="text-2xl font-semibold text-text-primary mb-2">Error al obtener el video</h2>
           <p className="text-text-secondary mb-6">{error}</p>
 
           <button
@@ -114,7 +115,7 @@ export default function VideoDownload({
               fetchedRef.current = false
               fetchDownloadUrl()
             }}
-            className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-accent hover:bg-accent-hover text-white rounded-lg font-medium transition-colors"
+            className={`w-full ${uploadPrimaryButton}`}
           >
             <RefreshCw className="w-5 h-5" />
             Reintentar
@@ -132,21 +133,23 @@ export default function VideoDownload({
   // Success state — download URL is ready
   return (
     <div className="w-full max-w-xl mx-auto">
-      <div className="bg-bg-secondary rounded-xl border border-border p-8 text-center">
-        <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-green-500/20 flex items-center justify-center">
-          <CheckCircle className="w-10 h-10 text-green-400" />
+      <div className={`${uploadCardPadded} text-center`}>
+        <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-green-50 border border-green-200 flex items-center justify-center">
+          <CheckCircle className="w-10 h-10 text-green-700" />
         </div>
 
-        <h2 className="text-2xl font-semibold text-white mb-2">¡Tu video está listo!</h2>
+        <h2 className="text-2xl font-semibold text-text-primary mb-2">¡Tu video está listo!</h2>
         <p className="text-text-secondary mb-8">
           Tu video generado con IA se ha procesado exitosamente y está listo para descargar.
         </p>
 
-        <div className="bg-bg-elevated rounded-lg p-4 mb-6">
+        <div className={`${uploadPanelPadded} mb-6`}>
           <div className="flex items-center gap-3">
-            <FileVideo className="w-8 h-8 text-accent" />
+            <div className="grid h-12 w-12 place-items-center rounded-2xl border border-accent/15 bg-accent/10">
+              <FileVideo className="w-6 h-6 text-accent" />
+            </div>
             <div className="text-left">
-              <p className="text-white font-medium">{filename}</p>
+              <p className="text-text-primary font-semibold">{filename}</p>
               <p className="text-sm text-text-secondary">MP4 &bull; HD Quality</p>
             </div>
           </div>
@@ -155,7 +158,7 @@ export default function VideoDownload({
         <a
           href={downloadUrl!}
           download={filename}
-          className="flex items-center justify-center gap-2 px-6 py-4 bg-green-600 hover:bg-green-500 text-white rounded-lg font-medium transition-colors"
+          className="flex items-center justify-center gap-2 rounded-full bg-green-700 px-6 py-3 text-sm font-semibold text-white transition hover:bg-green-600"
         >
           <Download className="w-5 h-5" />
           Descargar Video
@@ -163,7 +166,7 @@ export default function VideoDownload({
 
         <button
           onClick={() => window.open(downloadUrl!, '_blank')}
-          className="mt-4 w-full flex items-center justify-center gap-2 px-6 py-3 text-text-secondary hover:text-white transition-colors"
+          className={`mt-4 w-full ${uploadSecondaryButton}`}
         >
           <ExternalLink className="w-4 h-4" />
           Abrir en nueva pestaña
