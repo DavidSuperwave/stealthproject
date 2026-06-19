@@ -84,10 +84,10 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 
 # LipDub API (server-side only — proxied via /api/lipdub route)
-LIPDUB_API_KEY=your-lipdub-api-key
+Set `LIPDUB_API_KEY` to your LipDub API key.
 
 # Optional: Supermemory for script storage
-NEXT_PUBLIC_SUPERMEMORY_API_KEY=your-supermemory-key
+Set `NEXT_PUBLIC_SUPERMEMORY_API_KEY` if Supermemory is enabled.
 ```
 
 ## Routing Architecture

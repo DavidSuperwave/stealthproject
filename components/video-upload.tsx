@@ -43,7 +43,7 @@ export function VideoUpload({
     onProgress: (p) => {
       console.log(`Upload progress: ${p.percentage}%`);
     },
-    onSuccess: async (url, path) => {
+    onSuccess: async (storagePath, path) => {
       setUploadStage("processing");
       
       // Send URL to LipDub
@@ -52,7 +52,7 @@ export function VideoUpload({
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            videoUrl: url,
+            storagePath,
             options: {
               // Add any LipDub-specific options here
             },
@@ -67,7 +67,7 @@ export function VideoUpload({
         const data = await res.json();
         setLipdubVideoId(data.videoId);
         setUploadStage("complete");
-        onUploadComplete?.(url, data.videoId);
+        onUploadComplete?.(path, data.videoId);
       } catch (err) {
         const error = err instanceof Error ? err : new Error(String(err));
         setUploadStage("error");

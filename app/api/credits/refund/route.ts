@@ -1,82 +1,83 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
-import { createClient as createServerClient } from '@/lib/supabase/server'
+import {
+  apiErrorResponse,
+  assertGenerationJobOwner,
+  assertRenderJobOwner,
+  getIdempotencyKey,
+  getSupabaseAdmin,
+  requireUser
+} from '@/lib/api/auth'
 
-function getSupabaseAdmin() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  )
-}
+const REFUNDABLE_STATUSES = new Set(['failed', 'cancelled'])
 
 /**
  * POST /api/credits/refund
- * Body: { amount, project_id?, reason? }
- *
- * Refunds credits back to user's subscription (e.g. after failed generation).
+ * Body: { render_job_id? | generation_job_id?, idempotency_key?, reason? }
  */
 export async function POST(req: NextRequest) {
   try {
-    const supabaseAdmin = getSupabaseAdmin()
-    const supabase = createServerClient()
-    const { data: { user } } = await supabase.auth.getUser()
-
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
+    const admin = getSupabaseAdmin()
+    const { user } = await requireUser()
     const body = await req.json()
-    const { amount, project_id, reason } = body
 
-    if (!amount || amount <= 0) {
+    if (!body.render_job_id && !body.generation_job_id) {
       return NextResponse.json(
-        { error: 'amount must be a positive number' },
-        { status: 400 },
+        { error: 'A failed render_job_id or generation_job_id is required' },
+        { status: 400 }
       )
     }
 
-    // Add credits back to the active subscription
-    const { data: sub, error: subErr } = await supabaseAdmin
-      .from('user_subscriptions')
-      .select('id, credits_remaining')
-      .eq('user_id', user.id)
-      .eq('status', 'active')
-      .single()
+    let amount = 0
+    let projectId: string | null = null
 
-    if (subErr || !sub) {
+    if (body.render_job_id) {
+      const job = await assertRenderJobOwner(admin, user.id, body.render_job_id)
+      if (!REFUNDABLE_STATUSES.has(String(job.status))) {
+        return NextResponse.json({ error: 'Render job is not refundable' }, { status: 409 })
+      }
+      amount = Number(job.credits_reserved || 0)
+      projectId = job.project_id || null
+    }
+
+    if (body.generation_job_id) {
+      const job = await assertGenerationJobOwner(admin, user.id, body.generation_job_id)
+      if (!REFUNDABLE_STATUSES.has(String(job.status))) {
+        return NextResponse.json({ error: 'Generation job is not refundable' }, { status: 409 })
+      }
+      amount = Number(job.credits_reserved || body.amount || 0)
+      projectId = job.project_id || projectId
+    }
+
+    if (!Number.isFinite(amount) || amount <= 0) {
       return NextResponse.json(
-        { error: 'No active subscription found' },
-        { status: 404 },
+        { error: 'No reserved credits were found for this failed job' },
+        { status: 409 }
       )
     }
 
-    const newBalance = Number(sub.credits_remaining) + amount
-
-    const { error: updateErr } = await supabaseAdmin
-      .from('user_subscriptions')
-      .update({ credits_remaining: newBalance })
-      .eq('id', sub.id)
-
-    if (updateErr) {
-      return NextResponse.json({ error: updateErr.message }, { status: 500 })
-    }
-
-    // Record refund transaction
-    await supabaseAdmin.from('credit_transactions').insert({
-      user_id: user.id,
-      amount: amount,
-      type: 'refund',
-      project_id: project_id || null,
-      description: reason || `Reembolso de ${amount} créditos`,
+    const { data, error } = await admin.rpc('refund_failed_generation', {
+      p_user_id: user.id,
+      p_amount: amount,
+      p_project_id: projectId,
+      p_render_job_id: body.render_job_id || null,
+      p_generation_job_id: body.generation_job_id || null,
+      p_reason: body.reason || 'Reembolso por generacion fallida',
+      p_idempotency_key: getIdempotencyKey(req, body.idempotency_key)
     })
+
+    if (error) {
+      console.error('Credit refund RPC failed:', error)
+      return NextResponse.json(
+        { error: 'Credit ledger migration is required before refunding credits' },
+        { status: 503 }
+      )
+    }
 
     return NextResponse.json({
       success: true,
-      credits_remaining: newBalance,
+      credits_remaining: Number(data)
     })
-  } catch (err) {
-    const message = err instanceof Error ? err.message : 'Unknown error'
-    console.error('Credit refund failed:', message)
-    return NextResponse.json({ error: message }, { status: 500 })
+  } catch (error) {
+    return apiErrorResponse(error, 'Credit refund failed')
   }
 }

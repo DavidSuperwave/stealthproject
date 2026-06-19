@@ -44,7 +44,7 @@ export default function UploadStep({ onUpload, isUploading = false, uploadProgre
       <div>
         <h2 className="text-2xl font-semibold text-white mb-2">Upload Your Video</h2>
         <p className="text-text-secondary">
-          Upload a video file to start the personalization process. We'll automatically generate a transcript.
+          Upload a video file to start the personalization process. We&apos;ll automatically generate a transcript.
         </p>
       </div>
 

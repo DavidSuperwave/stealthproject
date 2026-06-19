@@ -1,13 +1,13 @@
-# LipDub API Reference - WORKING ENDPOINTS
+﻿# LipDub API Reference - WORKING ENDPOINTS
 ## Complete Video Generation Flow
 
 **Base URL:** `https://api.lipdub.ai/v1`  
 **Authentication:** `x-api-key: {your_api_key}`  
-**API Key:** `f07ba021-9085-44fc-acda-5487354a76ab`
+**API Key:** `$LIPDUB_API_KEY`
 
 ---
 
-## 🔥 COMPLETE API FLOW
+## ðŸ”¥ COMPLETE API FLOW
 
 ### Step 1: Upload Video
 **POST** `/v1/video`
@@ -17,7 +17,7 @@ Initiate video upload and get signed URL.
 **Request:**
 ```bash
 curl -X POST "https://api.lipdub.ai/v1/video" \
-  -H "x-api-key: f07ba021-9085-44fc-acda-5487354a76ab" \
+  -H "x-api-key: $LIPDUB_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
     "file_name": "training_video.mp4",
@@ -55,7 +55,7 @@ curl -X POST "https://api.lipdub.ai/v1/video" \
 
 ```bash
 curl "https://api.lipdub.ai/v1/video/status/dcd1dd52-9885-4246-a7a1-64a59c7a4a38" \
-  -H "x-api-key: f07ba021-9085-44fc-acda-5487354a76ab"
+  -H "x-api-key: $LIPDUB_API_KEY"
 ```
 
 **Response:**
@@ -77,7 +77,7 @@ curl "https://api.lipdub.ai/v1/video/status/dcd1dd52-9885-4246-a7a1-64a59c7a4a38
 
 ```bash
 curl -X POST "https://api.lipdub.ai/v1/audio" \
-  -H "x-api-key: f07ba021-9085-44fc-acda-5487354a76ab" \
+  -H "x-api-key: $LIPDUB_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
     "file_name": "dub_audio.mp3",
@@ -104,7 +104,7 @@ curl -X POST "https://api.lipdub.ai/v1/audio" \
 
 ```bash
 curl "https://api.lipdub.ai/v1/audio/status/935ce7a4-f49c-4fe8-9448-5a451b3096e1" \
-  -H "x-api-key: f07ba021-9085-44fc-acda-5487354a76ab"
+  -H "x-api-key: $LIPDUB_API_KEY"
 ```
 
 **Response:**
@@ -124,7 +124,7 @@ curl "https://api.lipdub.ai/v1/audio/status/935ce7a4-f49c-4fe8-9448-5a451b3096e1
 
 ```bash
 curl "https://api.lipdub.ai/v1/audio" \
-  -H "x-api-key: f07ba021-9085-44fc-acda-5487354a76ab"
+  -H "x-api-key: $LIPDUB_API_KEY"
 ```
 
 **Response:**
@@ -150,7 +150,7 @@ curl "https://api.lipdub.ai/v1/audio" \
 
 ```bash
 curl "https://api.lipdub.ai/v1/shots" \
-  -H "x-api-key: f07ba021-9085-44fc-acda-5487354a76ab"
+  -H "x-api-key: $LIPDUB_API_KEY"
 ```
 
 **Response:**
@@ -177,7 +177,7 @@ curl "https://api.lipdub.ai/v1/shots" \
 
 ```bash
 curl "https://api.lipdub.ai/v1/shots/736611/status" \
-  -H "x-api-key: f07ba021-9085-44fc-acda-5487354a76ab"
+  -H "x-api-key: $LIPDUB_API_KEY"
 ```
 
 **Response:**
@@ -197,7 +197,7 @@ curl "https://api.lipdub.ai/v1/shots/736611/status" \
 
 ```bash
 curl -X POST "https://api.lipdub.ai/v1/shots/736611/generate" \
-  -H "x-api-key: f07ba021-9085-44fc-acda-5487354a76ab" \
+  -H "x-api-key: $LIPDUB_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
     "output_filename": "generated_video.mp4",
@@ -222,7 +222,7 @@ curl -X POST "https://api.lipdub.ai/v1/shots/736611/generate" \
 
 ```bash
 curl "https://api.lipdub.ai/v1/shots/736611/generate/gen_123456" \
-  -H "x-api-key: f07ba021-9085-44fc-acda-5487354a76ab"
+  -H "x-api-key: $LIPDUB_API_KEY"
 ```
 
 ---
@@ -232,12 +232,12 @@ curl "https://api.lipdub.ai/v1/shots/736611/generate/gen_123456" \
 
 ```bash
 curl "https://api.lipdub.ai/v1/shots/736611/generate/gen_123456/download" \
-  -H "x-api-key: f07ba021-9085-44fc-acda-5487354a76ab"
+  -H "x-api-key: $LIPDUB_API_KEY"
 ```
 
 ---
 
-## 📊 YOUR ACCOUNT STATS
+## ðŸ“Š YOUR ACCOUNT STATS
 
 | Metric | Value |
 |--------|-------|
@@ -248,7 +248,7 @@ curl "https://api.lipdub.ai/v1/shots/736611/generate/gen_123456/download" \
 
 ---
 
-## 🎯 RECOMMENDED VIDEO SPECS
+## ðŸŽ¯ RECOMMENDED VIDEO SPECS
 
 For fastest processing:
 - **Resolution:** 1080p HD
@@ -260,7 +260,7 @@ For fastest processing:
 
 ---
 
-## 🔗 SUCCESS/FAILURE CALLBACKS
+## ðŸ”— SUCCESS/FAILURE CALLBACKS
 
 After uploading to `upload_url`:
 - **Success:** POST to `success_url`

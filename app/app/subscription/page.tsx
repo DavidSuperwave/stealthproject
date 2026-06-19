@@ -18,6 +18,16 @@ interface CreditPackage {
   includes_scripts: boolean
 }
 
+interface SubscriptionPlan {
+  id: string
+  name: string
+  price_cents: number
+  credits_monthly: number
+  tier: number
+  active: boolean
+  sort_order: number
+}
+
 function SubscriptionContent() {
   const searchParams = useSearchParams()
   const success = searchParams.get('success') === 'true'
@@ -25,10 +35,12 @@ function SubscriptionContent() {
 
   const [credits, setCredits] = useState<number | null>(null)
   const [packages, setPackages] = useState<CreditPackage[]>([])
+  const [plans, setPlans] = useState<SubscriptionPlan[]>([])
   const [loading, setLoading] = useState(true)
   const [purchasing, setPurchasing] = useState<string | null>(null)
   const [showSuccess, setShowSuccess] = useState(success)
   const [showCanceled, setShowCanceled] = useState(canceled)
+  const [loadError, setLoadError] = useState<string | null>(null)
 
   useEffect(() => {
     loadData()
@@ -46,33 +58,53 @@ function SubscriptionContent() {
   }, [showSuccess, showCanceled])
 
   const loadData = async () => {
-    const supabase = createClient()
+    setLoadError(null)
+    try {
+      const supabase = createClient()
 
-    // Fetch user subscription
-    const { data: { user } } = await supabase.auth.getUser()
-    if (user) {
-      const sub = await getUserSubscription(supabase, user.id)
-      if (sub) {
-        setCredits(Number(sub.credits_remaining))
+      // Fetch user subscription
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        const sub = await getUserSubscription(supabase, user.id)
+        if (sub) {
+          setCredits(Number(sub.credits_remaining))
+        }
       }
-    }
 
-    // Fetch credit packages
-    const { data: pkgs } = await supabase
-      .from('credit_packages')
-      .select('*')
-      .eq('active', true)
-      .order('sort_order', { ascending: true })
+      // Fetch credit packages
+      const [packagesResult, plansResult] = await Promise.all([
+        supabase
+          .from('credit_packages')
+          .select('*')
+          .eq('active', true)
+          .order('sort_order', { ascending: true }),
+        supabase
+          .from('subscription_plans')
+          .select('id, name, price_cents, credits_monthly, tier, active, sort_order')
+          .eq('active', true)
+          .gt('price_cents', 0)
+          .order('sort_order', { ascending: true }),
+      ])
 
-    if (pkgs) {
-      setPackages(pkgs as CreditPackage[])
-    }
+      if (packagesResult.error) throw packagesResult.error
+      if (plansResult.error) throw plansResult.error
 
-    setLoading(false)
+      if (packagesResult.data) {
+        setPackages(packagesResult.data as CreditPackage[])
+      }
+      if (plansResult.data) {
+        setPlans(plansResult.data as SubscriptionPlan[])
+      }
 
-    // If returning from successful purchase, refresh credits
-    if (success) {
-      window.dispatchEvent(new Event('credits-updated'))
+      // If returning from successful purchase, refresh credits
+      if (success) {
+        window.dispatchEvent(new Event('credits-updated'))
+      }
+    } catch (err) {
+      console.error('Failed to load subscription data:', err)
+      setLoadError('No se pudieron cargar los paquetes de créditos. Intenta actualizar la página.')
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -109,17 +141,43 @@ function SubscriptionContent() {
     }).format(pesos)
   }
 
+  const handleSubscription = async (planId: string) => {
+    setPurchasing(planId)
+    try {
+      const res = await fetch('/api/stripe/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ plan_id: planId }),
+      })
+
+      const data = await res.json()
+
+      if (data.url) {
+        window.location.href = data.url
+      } else {
+        console.error('No checkout URL returned:', data)
+        setPurchasing(null)
+      }
+    } catch (err) {
+      console.error('Subscription checkout failed:', err)
+      setPurchasing(null)
+    }
+  }
+
   const featureLabels: Record<string, string> = {
     '10 minutes of AI video': '10 minutos de video',
     '35 minutes of AI video': '35 minutos de video',
     '80 minutes of AI video': '80 minutos de video',
     '25 minutos de video': '25 minutos de video',
     '75 minutos de video': '75 minutos de video',
-    'Standard generation queue': 'Cola estÃ¡ndar de generaciÃ³n',
+    'Flujo guiado de campanas': 'Flujo guiado de campañas',
+    'Planeacion de campanas': 'Planeación de campañas',
+    'Revision prioritaria de flujo': 'Revisión prioritaria de flujo',
+    'Standard generation queue': 'Cola estándar de generación',
     'Priority workflow support': 'Soporte prioritario de flujo',
     'Script chat access': 'Acceso a guiones',
-    'Campaign planning': 'PlaneaciÃ³n de campaÃ±as',
-    'Managed service review': 'RevisiÃ³n asistida del servicio',
+    'Campaign planning': 'Planeación de campañas',
+    'Managed service review': 'Revisión asistida del servicio',
   }
 
   if (loading) {
@@ -134,8 +192,8 @@ function SubscriptionContent() {
   return (
     <div className="max-w-4xl mx-auto space-y-8">
       <div>
-        <h1 className="text-2xl font-semibold text-white">SuscripciÃ³n y crÃ©ditos</h1>
-        <p className="text-text-secondary mt-1">Compra crÃ©ditos para generar videos personalizados</p>
+        <h1 className="text-2xl font-semibold text-white">Suscripción y créditos</h1>
+        <p className="text-text-secondary mt-1">Compra créditos para generar videos personalizados</p>
       </div>
 
       {/* Success / Cancel banners */}
@@ -144,7 +202,7 @@ function SubscriptionContent() {
           <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0" />
           <div>
             <p className="text-green-300 font-medium">Compra exitosa</p>
-            <p className="text-green-300/70 text-sm">Tus crÃ©ditos se han agregado a tu cuenta.</p>
+            <p className="text-green-300/70 text-sm">Tus créditos se han agregado a tu cuenta.</p>
           </div>
         </div>
       )}
@@ -154,8 +212,15 @@ function SubscriptionContent() {
           <XCircle className="w-5 h-5 text-yellow-400 flex-shrink-0" />
           <div>
             <p className="text-yellow-300 font-medium">Compra cancelada</p>
-            <p className="text-yellow-300/70 text-sm">No se realizÃ³ ningÃºn cargo. Puedes intentar de nuevo cuando quieras.</p>
+            <p className="text-yellow-300/70 text-sm">No se realizó ningún cargo. Puedes intentar de nuevo cuando quieras.</p>
           </div>
+        </div>
+      )}
+
+      {loadError && (
+        <div className="flex items-center gap-3 p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-xl">
+          <XCircle className="w-5 h-5 text-yellow-400 flex-shrink-0" />
+          <p className="text-yellow-300 text-sm">{loadError}</p>
         </div>
       )}
 
@@ -169,26 +234,26 @@ function SubscriptionContent() {
               <CreditCard className="w-5 h-5 text-accent" />
             </div>
             <div>
-              <p className="text-white font-medium">CrÃ©ditos disponibles</p>
+              <p className="text-white font-medium">Créditos disponibles</p>
             </div>
           </div>
           <div className="text-right">
-            <p className="text-3xl font-bold text-white">{credits !== null ? credits.toFixed(2) : 'â€”'}</p>
-            <p className="text-text-secondary text-sm">crÃ©ditos</p>
+            <p className="text-3xl font-bold text-white">{credits !== null ? credits.toFixed(2) : '—'}</p>
+            <p className="text-text-secondary text-sm">créditos</p>
           </div>
         </div>
 
         <div className="mt-3 p-3 bg-accent/5 border border-accent/10 rounded-lg">
           <p className="text-xs text-text-secondary">
-            <span className="text-accent font-medium">5 crÃ©ditos = 1 minuto</span> de video generado.
-            Los crÃ©ditos se deducen al iniciar la generaciÃ³n de cada video.
+            <span className="text-accent font-medium">5 créditos = 1 minuto</span> de video generado.
+            Los créditos se deducen al iniciar la generación de cada video.
           </p>
         </div>
       </div>
 
       {/* Credit Packages */}
       <div>
-        <h2 className="text-lg font-medium text-white mb-4">Comprar crÃ©ditos</h2>
+        <h2 className="text-lg font-medium text-white mb-4">Comprar créditos</h2>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {packages.map((pkg) => (
@@ -228,7 +293,7 @@ function SubscriptionContent() {
                 </div>
 
                 <p className="text-text-secondary mt-1">
-                  {pkg.minutes_equivalent} minutos de video - {pkg.credits} creditos
+                  {pkg.minutes_equivalent} minutos de video - {pkg.credits} créditos
                 </p>
               </div>
 
@@ -237,7 +302,7 @@ function SubscriptionContent() {
                 {pkg.features.map((feature) => (
                   <li key={feature} className="flex items-center gap-2 text-sm text-text-secondary">
                     <Check className={`w-4 h-4 flex-shrink-0 ${pkg.is_best_value ? 'text-accent' : 'text-green-400'}`} />
-                    {featureLabels[feature] ?? feature.replaceAll('campaÃ±as', 'campanas')}
+                    {featureLabels[feature] ?? feature.replaceAll('campanas', 'campañas')}
                   </li>
                 ))}
               </ul>
@@ -269,25 +334,81 @@ function SubscriptionContent() {
         </div>
       </div>
 
+      {plans.length > 0 && (
+        <div>
+          <h2 className="text-lg font-medium text-white mb-4">Planes mensuales</h2>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {plans.map((plan) => (
+              <div key={plan.id} className="bg-bg-secondary rounded-xl border border-border p-6">
+                <div>
+                  <h3 className="text-xl font-semibold text-white">{plan.name}</h3>
+                  <div className="mt-3 flex items-baseline gap-1">
+                    <span className="text-4xl font-bold text-white">{formatPrice(plan.price_cents)}</span>
+                    <span className="text-text-secondary text-sm">MXN/mes</span>
+                  </div>
+                  <p className="text-text-secondary mt-1">
+                    {plan.credits_monthly} créditos mensuales
+                  </p>
+                </div>
+
+                <ul className="mt-5 space-y-2.5">
+                  <li className="flex items-center gap-2 text-sm text-text-secondary">
+                    <Check className="w-4 h-4 flex-shrink-0 text-accent" />
+                    Créditos renovados cada mes pagado
+                  </li>
+                  <li className="flex items-center gap-2 text-sm text-text-secondary">
+                    <Check className="w-4 h-4 flex-shrink-0 text-accent" />
+                    Acceso a guiones y campañas
+                  </li>
+                  <li className="flex items-center gap-2 text-sm text-text-secondary">
+                    <Check className="w-4 h-4 flex-shrink-0 text-accent" />
+                    Facturación administrada por Stripe
+                  </li>
+                </ul>
+
+                <button
+                  onClick={() => handleSubscription(plan.id)}
+                  disabled={purchasing !== null}
+                  className="w-full mt-6 px-4 py-3 rounded-lg font-medium transition-all text-sm flex items-center justify-center gap-2 bg-accent hover:bg-accent-hover text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {purchasing === plan.id ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Procesando...
+                    </>
+                  ) : (
+                    <>
+                      <CreditCard className="w-4 h-4" />
+                      Suscribirme
+                    </>
+                  )}
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* How credits work */}
       <div className="bg-bg-secondary rounded-xl border border-border p-6">
-        <h2 className="text-lg font-medium text-white mb-4">Â¿CÃ³mo funcionan los crÃ©ditos?</h2>
+        <h2 className="text-lg font-medium text-white mb-4">¿Cómo funcionan los créditos?</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {[
             {
               step: '1',
-              title: 'Compra crÃ©ditos',
+              title: 'Compra créditos',
               description: 'Elige un paquete y paga de forma segura.',
             },
             {
               step: '2',
               title: 'Genera videos',
-              description: 'Se deducen 5 crÃ©ditos por cada minuto de video generado.',
+              description: 'Se deducen 5 créditos por cada minuto de video generado.',
             },
             {
               step: '3',
-              title: 'Sin expiraciÃ³n',
-              description: 'Tus crÃ©ditos no tienen fecha de vencimiento. Ãšsalos cuando quieras.',
+              title: 'Sin expiración',
+              description: 'Tus créditos no tienen fecha de vencimiento. Úsalos cuando quieras.',
             },
           ].map((item) => (
             <div key={item.step} className="text-center p-4">

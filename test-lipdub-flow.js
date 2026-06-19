@@ -8,7 +8,11 @@ const fs = require('fs');
 const path = require('path');
 
 const API_BASE = 'https://api.lipdub.ai/v1';
-const API_KEY = 'f07ba021-9085-44fc-acda-5487354a76ab';
+const API_KEY = process.env.LIPDUB_API_KEY;
+
+if (!API_KEY) {
+  throw new Error('Set LIPDUB_API_KEY in your environment before running this test.');
+}
 
 // File paths
 const VIDEO_FILE = path.join(process.env.USERPROFILE, 'Downloads', 'final video (2).mp4');

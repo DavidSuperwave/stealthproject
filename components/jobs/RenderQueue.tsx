@@ -6,6 +6,9 @@ import { CheckCircle2, Clock3, Loader2, Play, RefreshCw, XCircle } from 'lucide-
 interface GenerationJob {
   id: string
   project_name: string
+  campaign_name: string | null
+  master_video_name: string | null
+  audio_name: string | null
   is_mock: boolean
   status: string
   progress: number
@@ -137,7 +140,7 @@ export default function RenderQueue() {
           <thead>
             <tr className="border-b border-border text-left text-xs uppercase text-text-muted">
               <th className="px-5 py-3 font-medium">Trabajo</th>
-              <th className="px-5 py-3 font-medium">Origen</th>
+              <th className="px-5 py-3 font-medium">Campana</th>
               <th className="px-5 py-3 font-medium">Estado</th>
               <th className="px-5 py-3 font-medium">Progreso</th>
               <th className="px-5 py-3 font-medium">Resultado</th>
@@ -158,7 +161,12 @@ export default function RenderQueue() {
                     <p className="mt-1 text-sm text-text-primary">{job.project_name}</p>
                   </td>
                   <td className="px-5 py-4 text-sm text-text-secondary">
-                    {job.is_mock ? 'Prueba' : 'Generación'}
+                    <p>{job.campaign_name ?? (job.is_mock ? 'Prueba' : 'Generacion')}</p>
+                    {(job.master_video_name || job.audio_name) && (
+                      <p className="mt-1 max-w-[220px] truncate text-xs text-text-muted">
+                        {job.master_video_name ?? 'Video'} + {job.audio_name ?? 'Audio'}
+                      </p>
+                    )}
                   </td>
                   <td className="px-5 py-4">
                     <span className="inline-flex items-center gap-2 rounded-full border border-border bg-bg-elevated px-2.5 py-1 text-xs font-medium capitalize text-text-secondary">

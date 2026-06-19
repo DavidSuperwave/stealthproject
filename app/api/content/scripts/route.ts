@@ -2,20 +2,48 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient as createServerClient } from '@/lib/supabase/server'
 import { ensureWorkspaceContext, getSupabaseAdmin } from '@/lib/render-jobs/service'
 
-async function getWorkspaceCampaignIds(userId: string) {
-  const supabaseAdmin = getSupabaseAdmin()
-  const context = await ensureWorkspaceContext(supabaseAdmin, userId)
-  const { data: campaigns, error } = await supabaseAdmin
+const scriptSelect =
+  'id, workspace_id, campaign_id, brand_id, title, hook, body, cta, full_script, duration_target_sec, caption_text, status, created_at, updated_at'
+const legacyScriptSelect =
+  'id, campaign_id, brand_id, title, hook, body, cta, full_script, duration_target_sec, caption_text, status, created_at, updated_at'
+
+function isMissingWorkspaceColumn(error: { message?: string } | null | undefined) {
+  return Boolean(error?.message?.includes('content_scripts.workspace_id'))
+}
+
+async function loadLegacyScripts(
+  supabaseAdmin: ReturnType<typeof getSupabaseAdmin>,
+  context: { workspaceId: string; brandId: string },
+  campaignFilter: string | null,
+  libraryOnly: boolean,
+) {
+  if (libraryOnly) return { scripts: [], error: null }
+
+  const { data: campaigns, error: campaignsErr } = await supabaseAdmin
     .from('content_campaigns')
     .select('id')
     .eq('workspace_id', context.workspaceId)
+    .eq('brand_id', context.brandId)
 
-  if (error) throw new Error(error.message)
+  if (campaignsErr) return { scripts: null, error: campaignsErr }
+
+  const campaignIds = (campaigns ?? []).map((campaign) => campaign.id)
+  if (campaignFilter && !campaignIds.includes(campaignFilter)) {
+    return { scripts: [], error: null }
+  }
+
+  const idsToLoad = campaignFilter ? [campaignFilter] : campaignIds
+  if (idsToLoad.length === 0) return { scripts: [], error: null }
+
+  const { data, error } = await supabaseAdmin
+    .from('content_scripts')
+    .select(legacyScriptSelect)
+    .in('campaign_id', idsToLoad)
+    .order('updated_at', { ascending: false })
 
   return {
-    supabaseAdmin,
-    context,
-    campaignIds: (campaigns ?? []).map((campaign) => campaign.id),
+    scripts: (data ?? []).map((script) => ({ ...script, workspace_id: context.workspaceId })),
+    error,
   }
 }
 
@@ -29,25 +57,32 @@ export async function GET(req: NextRequest) {
     }
 
     const campaignFilter = req.nextUrl.searchParams.get('campaign_id')
-    const { supabaseAdmin, campaignIds } = await getWorkspaceCampaignIds(user.id)
-
-    if (campaignIds.length === 0) {
-      return NextResponse.json({ scripts: [] })
-    }
+    const libraryOnly = req.nextUrl.searchParams.get('library') === 'true'
+    const supabaseAdmin = getSupabaseAdmin()
+    const context = await ensureWorkspaceContext(supabaseAdmin, user.id)
 
     let query = supabaseAdmin
       .from('content_scripts')
-      .select('id, campaign_id, brand_id, title, hook, body, cta, full_script, duration_target_sec, caption_text, status, created_at, updated_at')
-      .in('campaign_id', campaignIds)
+      .select(scriptSelect)
+      .eq('workspace_id', context.workspaceId)
       .order('updated_at', { ascending: false })
 
     if (campaignFilter) {
       query = query.eq('campaign_id', campaignFilter)
+    } else if (libraryOnly) {
+      query = query.is('campaign_id', null)
     }
 
     const { data: scripts, error } = await query
 
     if (error) {
+      if (isMissingWorkspaceColumn(error)) {
+        const legacy = await loadLegacyScripts(supabaseAdmin, context, campaignFilter, libraryOnly)
+        if (legacy.error) {
+          return NextResponse.json({ error: legacy.error.message }, { status: 500 })
+        }
+        return NextResponse.json({ scripts: legacy.scripts ?? [], needs_migration: true })
+      }
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
@@ -70,35 +105,41 @@ export async function POST(req: NextRequest) {
     const body = await req.json()
     const fullScript = String(body.full_script ?? body.content ?? '').trim()
     const title = String(body.title ?? '').trim() || 'Guion sin titulo'
-    const campaignId = String(body.campaign_id ?? '').trim()
+    const campaignId = body.campaign_id ? String(body.campaign_id).trim() : null
 
-    if (!campaignId) {
-      return NextResponse.json({ error: 'Selecciona una campana antes de guardar el guion' }, { status: 400 })
-    }
     if (!fullScript) {
       return NextResponse.json({ error: 'El guion no puede estar vacio' }, { status: 400 })
     }
 
     const supabaseAdmin = getSupabaseAdmin()
     const context = await ensureWorkspaceContext(supabaseAdmin, user.id)
-    const { data: campaign, error: campaignErr } = await supabaseAdmin
-      .from('content_campaigns')
-      .select('id, workspace_id, brand_id')
-      .eq('id', campaignId)
-      .single()
+    let brandId = context.brandId
+    let workspaceId = context.workspaceId
 
-    if (campaignErr || !campaign) {
-      return NextResponse.json({ error: 'No se encontro la campana seleccionada' }, { status: 404 })
-    }
-    if (campaign.workspace_id !== context.workspaceId || campaign.brand_id !== context.brandId) {
-      return NextResponse.json({ error: 'La campana no pertenece a este espacio de trabajo' }, { status: 403 })
+    if (campaignId) {
+      const { data: campaign, error: campaignErr } = await supabaseAdmin
+        .from('content_campaigns')
+        .select('id, workspace_id, brand_id')
+        .eq('id', campaignId)
+        .single()
+
+      if (campaignErr || !campaign) {
+        return NextResponse.json({ error: 'No se encontro la campana seleccionada' }, { status: 404 })
+      }
+      if (campaign.workspace_id !== context.workspaceId || campaign.brand_id !== context.brandId) {
+        return NextResponse.json({ error: 'La campana no pertenece a este espacio de trabajo' }, { status: 403 })
+      }
+
+      brandId = campaign.brand_id
+      workspaceId = campaign.workspace_id
     }
 
     const { data: script, error } = await supabaseAdmin
       .from('content_scripts')
       .insert({
-        campaign_id: campaign.id,
-        brand_id: campaign.brand_id,
+        workspace_id: workspaceId,
+        campaign_id: campaignId,
+        brand_id: brandId,
         title,
         hook: String(body.hook ?? '').trim() || null,
         body: String(body.body ?? fullScript).trim(),
@@ -108,10 +149,41 @@ export async function POST(req: NextRequest) {
         caption_text: String(body.notes ?? body.caption_text ?? '').trim() || null,
         status: body.status ?? 'draft',
       })
-      .select('id, campaign_id, brand_id, title, hook, body, cta, full_script, duration_target_sec, caption_text, status, created_at, updated_at')
+      .select(scriptSelect)
       .single()
 
     if (error || !script) {
+      if (isMissingWorkspaceColumn(error) && campaignId) {
+        const { data: legacyScript, error: legacyErr } = await supabaseAdmin
+          .from('content_scripts')
+          .insert({
+            campaign_id: campaignId,
+            brand_id: brandId,
+            title,
+            hook: String(body.hook ?? '').trim() || null,
+            body: String(body.body ?? fullScript).trim(),
+            cta: String(body.cta ?? '').trim() || null,
+            full_script: fullScript,
+            duration_target_sec: Number.isFinite(Number(body.duration_target_sec)) ? Number(body.duration_target_sec) : 45,
+            caption_text: String(body.notes ?? body.caption_text ?? '').trim() || null,
+            status: body.status ?? 'draft',
+          })
+          .select(legacyScriptSelect)
+          .single()
+
+        if (legacyErr || !legacyScript) {
+          return NextResponse.json({ error: legacyErr?.message || 'No se pudo guardar el guion' }, { status: 500 })
+        }
+
+        return NextResponse.json({ script: { ...legacyScript, workspace_id: workspaceId }, needs_migration: true }, { status: 201 })
+      }
+
+      if (isMissingWorkspaceColumn(error)) {
+        return NextResponse.json(
+          { error: 'Aplica la migracion de Guiones para guardar borradores en Biblioteca.' },
+          { status: 409 },
+        )
+      }
       return NextResponse.json({ error: error?.message || 'No se pudo guardar el guion' }, { status: 500 })
     }
 

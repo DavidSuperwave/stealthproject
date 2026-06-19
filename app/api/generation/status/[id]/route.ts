@@ -1,33 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import {
+  apiErrorResponse,
+  assertGenerationJobOwner,
+  getSupabaseAdmin,
+  requireUser
+} from '@/lib/api/auth'
 
-function getSupabaseAdmin() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  )
-}
-
-/**
- * GET /api/generation/status/[id]
- * Returns the generation job status from the database.
- */
 export async function GET(
   _req: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const supabaseAdmin = getSupabaseAdmin()
-  const { id } = await params
+  try {
+    const admin = getSupabaseAdmin()
+    const { user } = await requireUser()
+    const { id } = await params
+    const job = await assertGenerationJobOwner(admin, user.id, id)
 
-  const { data: job, error } = await supabaseAdmin
-    .from('generation_jobs')
-    .select('*')
-    .eq('id', id)
-    .single()
-
-  if (error || !job) {
-    return NextResponse.json({ error: 'Job not found' }, { status: 404 })
+    return NextResponse.json({ job })
+  } catch (error) {
+    return apiErrorResponse(error, 'Generation status lookup failed')
   }
-
-  return NextResponse.json({ job })
 }

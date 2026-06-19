@@ -12,7 +12,7 @@ interface UploadProgress {
 interface UseVideoUploadOptions {
   onProgress?: (progress: UploadProgress) => void;
   onError?: (error: Error) => void;
-  onSuccess?: (url: string, path: string) => void;
+  onSuccess?: (storagePath: string, path: string) => void;
 }
 
 interface UploadResult {
@@ -110,13 +110,8 @@ export function useVideoUpload(options: UseVideoUploadOptions = {}) {
         setProgress({ loaded: file.size, total: file.size, percentage: 100 });
         options.onProgress?.({ loaded: file.size, total: file.size, percentage: 100 });
 
-        // Get public URL
-        const { data: { publicUrl } } = supabase.storage
-          .from('videos')
-          .getPublicUrl(data.path);
-
-        const result = { url: publicUrl, path: data.path };
-        options.onSuccess?.(publicUrl, data.path);
+        const result = { url: data.path, path: data.path };
+        options.onSuccess?.(data.path, data.path);
         
         return result;
       } catch (err) {
@@ -207,13 +202,9 @@ export function useUserVideos() {
       const videosWithUrls = (data || [])
         .filter(file => !file.name.endsWith('/')) // Exclude folders
         .map(file => {
-          const { data: { publicUrl } } = supabase.storage
-            .from('videos')
-            .getPublicUrl(`${user.id}/${file.name}`);
-          
           return {
             name: file.name,
-            url: publicUrl,
+            url: `${user.id}/${file.name}`,
             created_at: file.created_at,
           };
         });

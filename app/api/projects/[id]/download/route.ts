@@ -1,26 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
 import { lipdubServer } from '@/lib/lipdub-server'
+import {
+  apiErrorResponse,
+  assertProjectOwner,
+  getSupabaseAdmin,
+  requireUser
+} from '@/lib/api/auth'
 
 export async function GET(
-  req: NextRequest,
+  _req: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const projectId = params.id
-
   try {
-    const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    const admin = getSupabaseAdmin()
+    const { user } = await requireUser()
+    const projectId = params.id
 
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    await assertProjectOwner(admin, user.id, projectId)
 
-    // Get the latest completed generation job for this project
-    const { data: job, error: jobErr } = await supabase
+    const { data: job, error: jobErr } = await admin
       .from('generation_jobs')
-      .select('shot_id, generate_id, status')
+      .select('shot_id, generate_id, status, user_id')
       .eq('project_id', projectId)
+      .eq('user_id', user.id)
       .eq('status', 'completed')
       .order('created_at', { ascending: false })
       .limit(1)
@@ -33,7 +35,6 @@ export async function GET(
       )
     }
 
-    // Get download URL from LipDub
     const result = await lipdubServer.getDownloadUrl(job.shot_id, job.generate_id)
 
     if (!result.download_url) {
@@ -43,10 +44,8 @@ export async function GET(
       )
     }
 
-    // Redirect to the download URL
     return NextResponse.redirect(result.download_url)
-  } catch (err) {
-    const message = err instanceof Error ? err.message : 'Error al obtener descarga'
-    return NextResponse.json({ error: message }, { status: 500 })
+  } catch (error) {
+    return apiErrorResponse(error, 'Error al obtener descarga')
   }
 }

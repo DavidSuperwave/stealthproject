@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient as createServerClient } from '@/lib/supabase/server'
 import { ensureWorkspaceContext, getSupabaseAdmin } from '@/lib/render-jobs/service'
+import { assertStorageObjectOwner } from '@/lib/api/auth'
 
-const allowedAssetTypes = new Set(['source_video', 'audio', 'voiceover', 'result_video'])
+const allowedAssetTypes = new Set(['source_video', 'audio', 'voiceover', 'result_video', 'image'])
 
 export async function POST(req: NextRequest) {
   try {
@@ -28,6 +29,7 @@ export async function POST(req: NextRequest) {
     const context = await ensureWorkspaceContext(supabaseAdmin, user.id)
     const campaignId = body.campaign_id ? String(body.campaign_id) : null
     const scriptId = body.script_id ? String(body.script_id) : null
+    const storagePath = String(body.storage_path ?? '').trim()
 
     if (campaignId) {
       const { data: campaign, error: campaignErr } = await supabaseAdmin
@@ -41,6 +43,14 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    if ((assetType === 'source_video' || assetType === 'audio' || assetType === 'voiceover') && !storagePath) {
+      return NextResponse.json({ error: 'storage_path es obligatorio para recursos de media' }, { status: 400 })
+    }
+
+    if (storagePath) {
+      assertStorageObjectOwner(storagePath, user.id)
+    }
+
     const { data: asset, error } = await supabaseAdmin
       .from('video_assets')
       .insert({
@@ -49,8 +59,9 @@ export async function POST(req: NextRequest) {
         campaign_id: campaignId,
         script_id: scriptId,
         title,
-        source_url: String(body.source_url ?? ''),
-        public_url: String(body.public_url ?? body.source_url ?? ''),
+        source_url: storagePath ? null : String(body.source_url ?? '').trim() || null,
+        storage_path: storagePath || null,
+        public_url: null,
         duration_sec: Number.isFinite(Number(body.duration_sec)) ? Number(body.duration_sec) : null,
         content_type: String(body.content_type ?? '').trim() || null,
         file_size: Number.isFinite(Number(body.file_size)) ? Number(body.file_size) : null,
@@ -62,7 +73,7 @@ export async function POST(req: NextRequest) {
           created_from: 'workspace_flow',
         },
       })
-      .select('id, workspace_id, brand_id, campaign_id, render_job_id, script_id, title, source_url, public_url, duration_sec, content_type, file_size, status, metadata, created_at')
+      .select('id, workspace_id, brand_id, campaign_id, render_job_id, script_id, title, source_url, storage_path, public_url, duration_sec, content_type, file_size, status, metadata, created_at')
       .single()
 
     if (error || !asset) {

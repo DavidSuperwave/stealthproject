@@ -34,6 +34,19 @@ export interface RenderJobRow {
   updated_at: string
 }
 
+function isUsableVideoUrl(value: unknown) {
+  if (typeof value !== 'string') return false
+  const trimmed = value.trim()
+  if (!trimmed) return false
+  if (trimmed.includes('example.com/')) return false
+  try {
+    const url = new URL(trimmed)
+    return url.protocol === 'http:' || url.protocol === 'https:'
+  } catch {
+    return false
+  }
+}
+
 interface WorkspaceContextOptions {
   allowBootstrap?: boolean
 }
@@ -292,9 +305,9 @@ export async function syncMockRenderJob(supabaseAdmin: SupabaseClient, job: Rend
     return { ...job, status: 'in_progress', progress }
   }
 
-  const output = {
+  const output: Record<string, unknown> = {
     ...(job.output ?? {}),
-    video_url: job.output?.video_url ?? 'https://example.com/mock-render.mp4',
+    preview_available: isUsableVideoUrl(job.output?.video_url),
     completed_by: 'mock_provider',
   }
 
@@ -312,22 +325,32 @@ export async function syncMockRenderJob(supabaseAdmin: SupabaseClient, job: Rend
 
   await recordJobEvent(supabaseAdmin, job.id, 'provider_completed', 'Mock render completed.', output)
 
-  const { data: asset } = await supabaseAdmin
-    .from('video_assets')
-    .insert({
-      workspace_id: job.workspace_id,
-      brand_id: job.brand_id,
-      campaign_id: job.campaign_id,
-      render_job_id: job.id,
-      script_id: job.script_id,
-      title: 'Video generado de prueba',
-      source_url: String(output.video_url),
-      public_url: String(output.video_url),
-      provider: job.provider,
-      metadata: { provider_model: job.provider_model },
-    })
-    .select('id')
-    .single()
+  let assetId: string | null = null
+  const videoUrl = isUsableVideoUrl(output.video_url) ? String(output.video_url) : null
+  if (videoUrl) {
+    const { data: asset } = await supabaseAdmin
+      .from('video_assets')
+      .insert({
+        workspace_id: job.workspace_id,
+        brand_id: job.brand_id,
+        campaign_id: job.campaign_id,
+        render_job_id: job.id,
+        script_id: job.script_id,
+        title: 'Video generado',
+        source_url: videoUrl,
+        public_url: videoUrl,
+        provider: job.provider,
+        status: 'ready',
+        metadata: {
+          asset_type: 'result_video',
+          provider_model: job.provider_model,
+          created_from: 'render_job',
+        },
+      })
+      .select('id')
+      .single()
+    assetId = asset?.id ?? null
+  }
 
   await logUsageEvent(supabaseAdmin, {
     workspaceId: job.workspace_id,
@@ -341,7 +364,7 @@ export async function syncMockRenderJob(supabaseAdmin: SupabaseClient, job: Rend
     credits: Number(job.credits_reserved ?? 0),
     estimatedCostUsd: Number(job.estimated_cost_usd ?? 0),
     actualCostUsd: Number(job.actual_cost_usd ?? job.estimated_cost_usd ?? 0),
-    metadata: { asset_id: asset?.id ?? null },
+    metadata: { asset_id: assetId, preview_available: Boolean(videoUrl) },
   })
 
   return {

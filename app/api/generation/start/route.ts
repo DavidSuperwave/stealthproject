@@ -1,52 +1,47 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
 import { lipdubServer } from '@/lib/lipdub-server'
+import {
+  apiErrorResponse,
+  assertProjectOwner,
+  getSupabaseAdmin,
+  requireUser
+} from '@/lib/api/auth'
 
-function getSupabaseAdmin() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  )
-}
-
-/**
- * POST /api/generation/start
- * Body: { project_id, user_id, shot_id, audio_id }
- *
- * Calls LipDub generate, creates a generation_job row, returns the job.
- */
 export async function POST(req: NextRequest) {
   try {
-    const supabaseAdmin = getSupabaseAdmin()
+    const admin = getSupabaseAdmin()
+    const { user } = await requireUser()
     const body = await req.json()
-    const { project_id, user_id, shot_id, audio_id } = body
+    const { project_id, shot_id, audio_id } = body
+    const creditsReserved = Number(body.credits_reserved || body.credits_to_deduct || 0)
 
-    if (!project_id || !user_id || !shot_id || !audio_id) {
+    if (!project_id || !shot_id || !audio_id) {
       return NextResponse.json(
-        { error: 'Missing required fields: project_id, user_id, shot_id, audio_id' },
-        { status: 400 },
+        { error: 'Missing required fields: project_id, shot_id, audio_id' },
+        { status: 400 }
       )
     }
 
-    // Call LipDub generate
+    await assertProjectOwner(admin, user.id, project_id)
+
     const generate = await lipdubServer.generateVideo(shot_id, {
       output_filename: `generated_${Date.now()}.mp4`,
-      audio_id,
+      audio_id
     })
 
-    // Create generation_job in DB
-    const { data: job, error: dbErr } = await supabaseAdmin
+    const { data: job, error: dbErr } = await admin
       .from('generation_jobs')
       .insert({
         project_id,
-        user_id,
+        user_id: user.id,
         shot_id,
         generate_id: generate.generate_id,
         audio_id,
         status: 'processing',
         progress: 0,
         current_step: 'generating',
-        started_at: new Date().toISOString(),
+        credits_reserved: Number.isFinite(creditsReserved) ? creditsReserved : 0,
+        started_at: new Date().toISOString()
       })
       .select()
       .single()
@@ -56,16 +51,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: dbErr.message }, { status: 500 })
     }
 
-    // Update project status to processing
-    await supabaseAdmin
+    await admin
       .from('projects')
       .update({ status: 'processing' })
       .eq('id', project_id)
 
     return NextResponse.json({ job, generate_id: generate.generate_id })
-  } catch (err) {
-    const message = err instanceof Error ? err.message : 'Unknown error'
-    console.error('Generation start failed:', message)
-    return NextResponse.json({ error: message }, { status: 500 })
+  } catch (error) {
+    return apiErrorResponse(error, 'Generation start failed')
   }
 }

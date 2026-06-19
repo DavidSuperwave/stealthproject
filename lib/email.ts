@@ -60,7 +60,7 @@ export async function sendCompletionEmail(params: {
     </div>
   `
 
-  await send(to, `¡Tu video "${projectName}" está listo! — DobleLabs`, html)
+  await send(to, `¡Tu video "${projectName}" está listo! - DobleLabs`, html)
 }
 
 export async function sendFailureEmail(params: {
@@ -88,5 +88,5 @@ export async function sendFailureEmail(params: {
     </div>
   `
 
-  await send(to, `Error en tu video "${projectName}" — DobleLabs`, html)
+  await send(to, `Error en tu video "${projectName}" - DobleLabs`, html)
 }

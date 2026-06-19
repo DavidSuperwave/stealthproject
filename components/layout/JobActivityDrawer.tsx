@@ -11,6 +11,9 @@ interface JobActivityDrawerProps {
 interface GenerationJob {
   id: string
   project_name: string
+  campaign_name: string | null
+  master_video_name: string | null
+  audio_name: string | null
   is_mock: boolean
   status: string
   progress: number
@@ -151,7 +154,12 @@ export default function JobActivityDrawer({ isOpen, onClose }: JobActivityDrawer
                         {job.project_name}
                       </p>
                     </div>
-                    <p className="mt-1 text-xs text-text-muted">{job.is_mock ? 'Prueba' : 'Generación'} - Actualizado {formatAge(job.updated_at || job.created_at)}</p>
+                    <p className="mt-1 text-xs text-text-muted">{job.campaign_name ?? (job.is_mock ? 'Prueba' : 'Generacion')} - Actualizado {formatAge(job.updated_at || job.created_at)}</p>
+                    {(job.master_video_name || job.audio_name) && (
+                      <p className="mt-1 truncate text-xs text-text-muted">
+                        {job.master_video_name ?? 'Video'} + {job.audio_name ?? 'Audio'}
+                      </p>
+                    )}
                   </div>
                   <span className="rounded-full border border-border bg-background px-2 py-1 text-xs font-medium capitalize text-text-secondary">
                     {statusLabel(job.status)}

@@ -1,52 +1,54 @@
 import { NextRequest, NextResponse } from 'next/server'
+import {
+  apiErrorResponse,
+  assertProjectOwner,
+  assertStorageObjectOwner,
+  getSupabaseAdmin,
+  requireUser,
+  storagePathFromSupabaseUrl
+} from '@/lib/api/auth'
 
 const LIPDUB_BASE = process.env.LIPDUB_API_URL || 'https://api.lipdub.ai/v1'
 const LIPDUB_KEY = process.env.LIPDUB_API_KEY || ''
 
-/**
- * Video upload via Supabase Storage URL
- * 
- * This endpoint accepts a video URL (from Supabase Storage) instead of raw bytes,
- * bypassing Vercel's 4.5MB payload limit.
- * 
- * POST /api/video-upload
- * Body: { videoUrl: string, projectId?: string, options?: {...} }
- */
 export async function POST(req: NextRequest) {
   try {
+    const admin = getSupabaseAdmin()
+    const { user } = await requireUser()
     const body = await req.json()
-    const { videoUrl, projectId, options = {} } = body
+    const { projectId, options = {} } = body
+    const storagePath = assertStorageObjectOwner(
+      body.storagePath || storagePathFromSupabaseUrl(body.videoUrl),
+      user.id
+    )
 
-    if (!videoUrl) {
-      return NextResponse.json(
-        { error: 'Missing "videoUrl" in request body' },
-        { status: 400 }
-      )
+    if (projectId) {
+      await assertProjectOwner(admin, user.id, projectId)
     }
 
-    // Validate URL is from Supabase Storage
-    if (!isValidSupabaseUrl(videoUrl)) {
-      return NextResponse.json(
-        { error: 'URL de video inválida.' },
-        { status: 400 }
-      )
-    }
+    const { data: signed, error: signedError } = await admin
+      .storage
+      .from('videos')
+      .createSignedUrl(storagePath, 10 * 60)
 
-    // Call LipDub API with the video URL
-    // LipDub supports URL-based uploads
-    const lipdubPayload = {
-      video_url: videoUrl,
-      project_id: projectId,
-      ...options,
+    if (signedError || !signed?.signedUrl) {
+      return NextResponse.json(
+        { error: 'No se pudo crear un enlace privado para el video' },
+        { status: 502 }
+      )
     }
 
     const res = await fetch(`${LIPDUB_BASE}/video`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': LIPDUB_KEY,
+        'x-api-key': LIPDUB_KEY
       },
-      body: JSON.stringify(lipdubPayload),
+      body: JSON.stringify({
+        video_url: signed.signedUrl,
+        project_id: projectId,
+        ...options
+      })
     })
 
     if (!res.ok) {
@@ -58,40 +60,39 @@ export async function POST(req: NextRequest) {
     }
 
     const data = await res.json()
-    
+
     return NextResponse.json({
       success: true,
       videoId: data.id,
       status: data.status,
-      url: videoUrl,
-      lipdubResponse: data,
+      storagePath,
+      lipdubResponse: data
     })
-
-  } catch (err) {
-    const message = err instanceof Error ? err.message : 'Upload failed'
-    return NextResponse.json({ error: message }, { status: 500 })
+  } catch (error) {
+    return apiErrorResponse(error, 'Upload failed')
   }
 }
 
-/**
- * Get video processing status
- * GET /api/video-upload?videoId=xxx
- */
 export async function GET(req: NextRequest) {
-  const videoId = req.nextUrl.searchParams.get('videoId')
-
-  if (!videoId) {
-    return NextResponse.json(
-      { error: 'Missing "videoId" query parameter' },
-      { status: 400 }
-    )
-  }
-
   try {
+    const admin = getSupabaseAdmin()
+    const { user } = await requireUser()
+    const videoId = req.nextUrl.searchParams.get('videoId')
+    const projectId = req.nextUrl.searchParams.get('projectId')
+
+    if (!videoId || !projectId) {
+      return NextResponse.json(
+        { error: 'videoId and projectId query parameters are required' },
+        { status: 400 }
+      )
+    }
+
+    await assertProjectOwner(admin, user.id, projectId)
+
     const res = await fetch(`${LIPDUB_BASE}/video/${videoId}/status`, {
       headers: {
-        'x-api-key': LIPDUB_KEY,
-      },
+        'x-api-key': LIPDUB_KEY
+      }
     })
 
     if (!res.ok) {
@@ -104,27 +105,8 @@ export async function GET(req: NextRequest) {
 
     const data = await res.json()
     return NextResponse.json(data)
-
-  } catch (err) {
-    const message = err instanceof Error ? err.message : 'Status check failed'
-    return NextResponse.json({ error: message }, { status: 500 })
-  }
-}
-
-/**
- * Validate URL is from Supabase Storage
- */
-function isValidSupabaseUrl(url: string): boolean {
-  try {
-    const parsed = new URL(url)
-    // Allow Supabase storage URLs and localhost for testing
-    return (
-      parsed.hostname.includes('supabase.co') ||
-      parsed.hostname.includes('supabase.in') ||
-      parsed.hostname === 'localhost'
-    )
-  } catch {
-    return false
+  } catch (error) {
+    return apiErrorResponse(error, 'Status check failed')
   }
 }
 

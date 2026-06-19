@@ -18,13 +18,12 @@ const CLOSE_CONFIG = {
   LEAD_STATUS: 'stat_akk8EK1dRWnxVJQ6o970bMIGKTU2MZVouQoDTGKgfmx', // Potential
   // Opportunity Pipeline
   PIPELINE_ID: 'pipe_6p1Uhj3YxEKHMqAKsEQFKX',
-  OPPORTUNITY_STATUS: 'stat_nz5nAqr6UmQmIZhnP7cRkkbcPydIYkK5e8vqhdHsjQL', // Estableció Interés
+  OPPORTUNITY_STATUS: 'stat_nz5nAqr6UmQmIZhnP7cRkkbcPydIYkK5e8vqhdHsjQL',
   // Tag name
   TAG_NAME: 'doblelabs',
   // Opportunity value in MXN
   OPPORTUNITY_VALUE: 2000,
-  // Email sequence template ID (you'll need to create this in Close)
-  // EMAIL_SEQUENCE_ID: 'seq_xxx', // Uncomment and set after creating in Close
+  EMAIL_SEQUENCE_ID: process.env.CLOSE_EMAIL_SEQUENCE_ID || '',
   // Task due date offset (days)
   FOLLOW_UP_DAYS: 1,
 }
@@ -318,7 +317,7 @@ export async function POST(req: NextRequest) {
     // Create opportunity for the lead with $2000 MXN value
     const opportunityData: CloseOpportunityData = {
       lead_id: closeResponse.id,
-      status_id: CLOSE_CONFIG.OPPORTUNITY_STATUS, // "Estableció Interés"
+      status_id: CLOSE_CONFIG.OPPORTUNITY_STATUS,
       pipeline_id: CLOSE_CONFIG.PIPELINE_ID,
       value: CLOSE_CONFIG.OPPORTUNITY_VALUE, // 2000 MXN
       value_period: 'one_time',
@@ -333,7 +332,7 @@ export async function POST(req: NextRequest) {
     // Add note/activity to the lead
     const noteData: CloseNoteData = {
       lead_id: closeResponse.id,
-      note: `🎉 Nuevo registro en DobleLabs\n\n` +
+      note: `Nuevo registro en DobleLabs\n\n` +
             `Fecha: ${formattedDate}\n` +
             `Email: ${email}\n` +
             `Teléfono: ${phone || 'No proporcionado'}\n` +
@@ -356,7 +355,7 @@ export async function POST(req: NextRequest) {
     // Create follow-up task
     const taskData: CloseTaskData = {
       lead_id: closeResponse.id,
-      text: `📞 Llamar a ${firstName} para dar seguimiento al registro en DobleLabs. Valor: $2,000 MXN`,
+      text: `Llamar a ${firstName} para dar seguimiento al registro en DobleLabs. Valor: $2,000 MXN`,
       due_date: followUpDateString,
       is_complete: false,
     }
@@ -368,17 +367,16 @@ export async function POST(req: NextRequest) {
 
     // Subscribe to email sequence (if configured)
     let sequenceSubscription = null
-    // Uncomment the line below and set EMAIL_SEQUENCE_ID in CLOSE_CONFIG when ready
-    // if (contactId && CLOSE_CONFIG.EMAIL_SEQUENCE_ID) {
-    //   sequenceSubscription = await subscribeToEmailSequence(
-    //     closeResponse.id, 
-    //     contactId, 
-    //     CLOSE_CONFIG.EMAIL_SEQUENCE_ID
-    //   )
-    //   if (sequenceSubscription) {
-    //     console.log('[Close CRM] Email sequence subscription created:', sequenceSubscription.id)
-    //   }
-    // }
+    if (contactId && CLOSE_CONFIG.EMAIL_SEQUENCE_ID) {
+      sequenceSubscription = await subscribeToEmailSequence(
+        closeResponse.id,
+        contactId,
+        CLOSE_CONFIG.EMAIL_SEQUENCE_ID
+      )
+      if (sequenceSubscription) {
+        console.log('[Close CRM] Email sequence subscription created:', sequenceSubscription.id)
+      }
+    }
 
     return NextResponse.json({
       success: true,
@@ -386,6 +384,7 @@ export async function POST(req: NextRequest) {
       closeOpportunityId: opportunity?.id || null,
       closeNoteId: note?.id || null,
       closeTaskId: task?.id || null,
+      closeSequenceSubscriptionId: sequenceSubscription?.id || null,
       closeTagApplied: tag ? CLOSE_CONFIG.TAG_NAME : null,
       message: 'Lead, opportunity, note, tag, and follow-up task created in Close CRM',
     })

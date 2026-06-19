@@ -136,7 +136,7 @@ export default function GenerateStep({
         </div>
 
         <p className="mt-3 text-sm text-text-secondary">
-          Sample: "Hey {campaign.recipients[0]?.first_name}, welcome to {campaign.recipients[0]?.company}!"
+          Sample: &quot;Hey {campaign.recipients[0]?.first_name}, welcome to {campaign.recipients[0]?.company}!&quot;
         </p>
       </div>
 

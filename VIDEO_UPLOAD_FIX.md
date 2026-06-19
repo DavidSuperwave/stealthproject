@@ -43,7 +43,7 @@ NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key  # For server-side
 
-LIPDUB_API_KEY=your-lipdub-key
+Set `LIPDUB_API_KEY` to your LipDub API key.
 LIPDUB_API_URL=https://api.lipdub.ai/v1
 ```
 

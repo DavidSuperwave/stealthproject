@@ -99,7 +99,7 @@ export default function VariablesStep({
             className="fixed z-50 bg-bg-elevated rounded-lg border border-border shadow-xl p-2"
             style={{ left: menuPosition.x, top: menuPosition.y }}
           >
-            <p className="px-3 py-2 text-sm text-text-secondary">Make "{selectedText}" dynamic:</p>
+            <p className="px-3 py-2 text-sm text-text-secondary">Make &quot;{selectedText}&quot; dynamic:</p>
             {variableTypes.map((type) => {
               const Icon = type.icon
               return (

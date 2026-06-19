@@ -14,6 +14,19 @@ const DEFAULT_MOCK_MODEL = 'mock-video-v1'
 const PLATFORM_SCHEMA_MESSAGE =
   'Database migration required. Apply supabase/migrations/004_platform_foundation.sql before using render jobs.'
 
+function isUsableVideoUrl(value: unknown) {
+  if (typeof value !== 'string') return false
+  const trimmed = value.trim()
+  if (!trimmed) return false
+  if (trimmed.includes('example.com/')) return false
+  try {
+    const url = new URL(trimmed)
+    return url.protocol === 'http:' || url.protocol === 'https:'
+  } catch {
+    return false
+  }
+}
+
 function isMissingPlatformSchema(error?: { code?: string; message?: string } | null) {
   return (
     error?.code === 'PGRST205' ||
@@ -266,22 +279,32 @@ export async function POST(req: NextRequest) {
       if (terminal) {
         await recordJobEvent(supabaseAdmin, job.id, 'provider_completed', 'Video completado.', submit.output ?? {})
         const output = submit.output ?? {}
-        const { data: asset } = await supabaseAdmin
-          .from('video_assets')
-          .insert({
-            workspace_id: context.workspaceId,
-            brand_id: context.brandId,
-            campaign_id: refs.campaignId,
-            render_job_id: job.id,
-            script_id: refs.scriptId,
-            title: 'Video generado de prueba',
-            source_url: String(output.video_url ?? ''),
-            public_url: String(output.video_url ?? ''),
-            provider: provider.name,
-            metadata: { provider_model: providerModel },
-          })
-          .select('id')
-          .single()
+        const videoUrl = isUsableVideoUrl(output.video_url) ? String(output.video_url) : null
+        let assetId: string | null = null
+        if (videoUrl) {
+          const { data: asset } = await supabaseAdmin
+            .from('video_assets')
+            .insert({
+              workspace_id: context.workspaceId,
+              brand_id: context.brandId,
+              campaign_id: refs.campaignId,
+              render_job_id: job.id,
+              script_id: refs.scriptId,
+              title: 'Video generado',
+              source_url: videoUrl,
+              public_url: videoUrl,
+              provider: provider.name,
+              status: 'ready',
+              metadata: {
+                asset_type: 'result_video',
+                provider_model: providerModel,
+                created_from: 'render_job',
+              },
+            })
+            .select('id')
+            .single()
+          assetId = asset?.id ?? null
+        }
 
         await logUsageEvent(supabaseAdmin, {
           workspaceId: context.workspaceId,
@@ -295,7 +318,7 @@ export async function POST(req: NextRequest) {
           credits: creditsReserved,
           estimatedCostUsd,
           actualCostUsd: estimatedCostUsd,
-          metadata: { asset_id: asset?.id ?? null },
+          metadata: { asset_id: assetId, preview_available: Boolean(videoUrl) },
         })
       }
 

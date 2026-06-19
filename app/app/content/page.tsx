@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import Layout from '@/components/layout/Layout'
 import Link from 'next/link'
-import { ArrowRight, CalendarDays, ClipboardList, FileText, Loader2, Plus, Search, Video } from 'lucide-react'
+import { ArrowRight, CalendarDays, FileAudio, FileText, FolderOpen, Loader2, Plus, Search, Video } from 'lucide-react'
 
 type Campaign = {
   id: string
@@ -16,6 +16,10 @@ type Campaign = {
   brief: Record<string, unknown>
   script_count: number
   asset_count: number
+  video_count: number
+  audio_count: number
+  result_count: number
+  job_count: number
   created_at: string
   updated_at: string
 }
@@ -78,9 +82,9 @@ export default function ContentEnginePage() {
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <p className="text-sm font-medium uppercase text-accent">Campanas</p>
-            <h1 className="mt-2 text-3xl font-semibold text-text-primary">Planea videos antes de generarlos</h1>
+            <h1 className="mt-2 text-3xl font-semibold text-text-primary">Carpetas de campana</h1>
             <p className="mt-2 max-w-3xl text-sm text-text-secondary">
-              Organiza ofertas, guiones, videos base y resultados finales por campana.
+              Cada campana funciona como una carpeta con videos, audios, guiones, generaciones y resultados.
             </p>
           </div>
           <Link href="/app/content/new" className="inline-flex items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-accent-hover">
@@ -113,11 +117,11 @@ export default function ContentEnginePage() {
           ) : filteredCampaigns.length === 0 ? (
             <div className="p-12 text-center">
               <div className="mx-auto grid h-14 w-14 place-items-center rounded-xl bg-accent/10">
-                <ClipboardList className="h-7 w-7 text-accent" />
+                <FolderOpen className="h-7 w-7 text-accent" />
               </div>
               <h2 className="mt-4 text-lg font-semibold text-text-primary">Aun no hay campanas</h2>
               <p className="mx-auto mt-2 max-w-md text-sm text-text-muted">
-                Crea una campana para guardar guiones, videos y resultados bajo una misma oferta.
+                Crea una carpeta de campana para subir videos, audios y generar piezas desde ahi.
               </p>
               <Link href="/app/content/new" className="mt-5 inline-flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white transition hover:bg-accent-hover">
                 Crear campana
@@ -138,16 +142,28 @@ export default function ContentEnginePage() {
                     </span>
                   </div>
                   <p className="mt-3 line-clamp-3 min-h-[60px] text-sm leading-5 text-text-secondary">
-                    {campaign.objective || String(campaign.brief?.cta ?? campaign.brief?.audience ?? 'Campana lista para guiones y videos.')}
+                    {campaign.objective || String(campaign.brief?.cta ?? campaign.brief?.audience ?? 'Carpeta lista para guardar recursos.')}
                   </p>
-                  <div className="mt-4 grid grid-cols-3 gap-2 text-xs text-text-muted">
+                  <div className="mt-4 grid grid-cols-2 gap-2 text-xs text-text-muted">
+                    <span className="inline-flex items-center gap-1 rounded-lg bg-bg-elevated px-2 py-2">
+                      <Video className="h-3.5 w-3.5 text-accent" />
+                      {campaign.video_count ?? 0} videos
+                    </span>
+                    <span className="inline-flex items-center gap-1 rounded-lg bg-bg-elevated px-2 py-2">
+                      <FileAudio className="h-3.5 w-3.5 text-accent" />
+                      {campaign.audio_count ?? 0} audios
+                    </span>
                     <span className="inline-flex items-center gap-1 rounded-lg bg-bg-elevated px-2 py-2">
                       <FileText className="h-3.5 w-3.5 text-accent" />
                       {campaign.script_count} guiones
                     </span>
                     <span className="inline-flex items-center gap-1 rounded-lg bg-bg-elevated px-2 py-2">
-                      <Video className="h-3.5 w-3.5 text-accent" />
-                      {campaign.asset_count} recursos
+                      <FolderOpen className="h-3.5 w-3.5 text-accent" />
+                      {campaign.result_count ?? 0} resultados
+                    </span>
+                    <span className="inline-flex items-center gap-1 rounded-lg bg-bg-elevated px-2 py-2">
+                      <ArrowRight className="h-3.5 w-3.5 text-accent" />
+                      {campaign.job_count ?? 0} trabajos
                     </span>
                     <span className="inline-flex items-center gap-1 rounded-lg bg-bg-elevated px-2 py-2">
                       <CalendarDays className="h-3.5 w-3.5 text-accent" />
@@ -155,8 +171,8 @@ export default function ContentEnginePage() {
                     </span>
                   </div>
                   <div className="mt-5 flex gap-2">
-                    <Link href={`/app/scripts?campaign=${campaign.id}`} className="inline-flex flex-1 items-center justify-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-semibold text-text-secondary transition hover:border-accent hover:text-text-primary">
-                      Guion
+                    <Link href={`/app/content/${campaign.id}`} className="inline-flex flex-1 items-center justify-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-semibold text-text-secondary transition hover:border-accent hover:text-text-primary">
+                      Abrir carpeta
                     </Link>
                     <Link href={`/app/upload?campaign=${campaign.id}`} className="inline-flex flex-1 items-center justify-center gap-2 rounded-lg bg-accent px-3 py-2 text-sm font-semibold text-white transition hover:bg-accent-hover">
                       Crear video

@@ -12,6 +12,8 @@ out/
 
 # debug
 npm-debug.log*
+*.log
+.gpt-pro/
 
 # misc
 .DS_Store

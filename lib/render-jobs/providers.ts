@@ -34,7 +34,7 @@ const mockProvider: RenderProvider = {
       progress: completeImmediately ? 100 : 18,
       output: completeImmediately
         ? {
-            video_url: 'https://example.com/mock-render.mp4',
+            preview_available: false,
             note: 'Mock provider completed immediately.',
           }
         : undefined,

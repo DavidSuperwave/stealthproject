@@ -7,6 +7,13 @@ function normalizePlatform(value: unknown) {
   return platform || 'video'
 }
 
+function getAssetType(asset: { metadata?: Record<string, unknown> | null; render_job_id?: string | null; content_type?: string | null }) {
+  if (asset.metadata?.asset_type) return String(asset.metadata.asset_type)
+  if (asset.render_job_id) return 'result_video'
+  if (asset.content_type?.startsWith('audio/')) return 'audio'
+  return 'source_video'
+}
+
 export async function GET() {
   try {
     const supabase = createServerClient()
@@ -31,12 +38,16 @@ export async function GET() {
 
     const campaignIds = (campaigns ?? []).map((campaign) => campaign.id)
     const scriptCounts = new Map<string, number>()
-    const assetCounts = new Map<string, number>()
+    const videoCounts = new Map<string, number>()
+    const audioCounts = new Map<string, number>()
+    const resultCounts = new Map<string, number>()
+    const jobCounts = new Map<string, number>()
 
     if (campaignIds.length > 0) {
-      const [{ data: scripts }, { data: assets }] = await Promise.all([
+      const [{ data: scripts }, { data: assets }, { data: jobs }] = await Promise.all([
         supabaseAdmin.from('content_scripts').select('campaign_id').in('campaign_id', campaignIds),
-        supabaseAdmin.from('video_assets').select('campaign_id').in('campaign_id', campaignIds),
+        supabaseAdmin.from('video_assets').select('campaign_id, render_job_id, content_type, metadata').in('campaign_id', campaignIds),
+        supabaseAdmin.from('render_jobs').select('campaign_id').in('campaign_id', campaignIds),
       ])
 
       ;(scripts ?? []).forEach((script) => {
@@ -44,8 +55,14 @@ export async function GET() {
       })
       ;(assets ?? []).forEach((asset) => {
         if (asset.campaign_id) {
-          assetCounts.set(asset.campaign_id, (assetCounts.get(asset.campaign_id) ?? 0) + 1)
+          const type = getAssetType(asset)
+          if (type === 'source_video') videoCounts.set(asset.campaign_id, (videoCounts.get(asset.campaign_id) ?? 0) + 1)
+          if (['audio', 'voiceover'].includes(type)) audioCounts.set(asset.campaign_id, (audioCounts.get(asset.campaign_id) ?? 0) + 1)
+          if (type === 'result_video') resultCounts.set(asset.campaign_id, (resultCounts.get(asset.campaign_id) ?? 0) + 1)
         }
+      })
+      ;(jobs ?? []).forEach((job) => {
+        if (job.campaign_id) jobCounts.set(job.campaign_id, (jobCounts.get(job.campaign_id) ?? 0) + 1)
       })
     }
 
@@ -53,7 +70,11 @@ export async function GET() {
       campaigns: (campaigns ?? []).map((campaign) => ({
         ...campaign,
         script_count: scriptCounts.get(campaign.id) ?? 0,
-        asset_count: assetCounts.get(campaign.id) ?? 0,
+        video_count: videoCounts.get(campaign.id) ?? 0,
+        audio_count: audioCounts.get(campaign.id) ?? 0,
+        result_count: resultCounts.get(campaign.id) ?? 0,
+        job_count: jobCounts.get(campaign.id) ?? 0,
+        asset_count: (videoCounts.get(campaign.id) ?? 0) + (audioCounts.get(campaign.id) ?? 0) + (resultCounts.get(campaign.id) ?? 0),
       })),
       workspace_id: context.workspaceId,
       brand_id: context.brandId,

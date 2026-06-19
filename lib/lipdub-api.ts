@@ -251,12 +251,7 @@ class LipDubAPI {
       throw new Error(`Supabase upload failed: ${uploadError.message}`);
     }
 
-    // Get public URL
-    const { data: { publicUrl } } = supabase.storage
-      .from('videos')
-      .getPublicUrl(filePath);
-
-    console.log('[Supabase] Uploaded to:', publicUrl);
+    console.log('[Supabase] Uploaded to private path:', filePath);
     onProgress?.(40);
 
     // Step 3: Server streams from Supabase to LipDub GCS
@@ -267,7 +262,7 @@ class LipDubAPI {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        supabaseUrl: publicUrl,
+        storagePath: filePath,
         lipdubUploadUrl: lipdubCreate.upload_url,
         videoId: lipdubCreate.video_id,
         successUrl: lipdubCreate.success_url,
@@ -284,10 +279,10 @@ class LipDubAPI {
     console.log('[Transfer] Complete:', transferData);
     onProgress?.(100);
 
-    // Return the original LipDub response with Supabase URL for reference
+    // Return the original LipDub response with the private storage path for reference
     return {
       ...lipdubCreate,
-      upload_url: publicUrl, // Keep Supabase URL for reference
+      upload_url: filePath,
     };
   }
 
@@ -363,11 +358,7 @@ class LipDubAPI {
       throw new Error(`Supabase upload failed: ${uploadError.message}`);
     }
 
-    const { data: { publicUrl } } = supabase.storage
-      .from('videos')
-      .getPublicUrl(filePath);
-
-    console.log('[Supabase] Audio uploaded to:', publicUrl);
+    console.log('[Supabase] Audio uploaded to private path:', filePath);
     onProgress?.(40);
 
     // Step 3: Server streams from Supabase to LipDub GCS
@@ -378,7 +369,7 @@ class LipDubAPI {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        supabaseUrl: publicUrl,
+        storagePath: filePath,
         lipdubUploadUrl: lipdubCreate.upload_url,
         videoId: lipdubCreate.audio_id, // Using audio_id as videoId for compatibility
         successUrl: lipdubCreate.success_url,
